@@ -93,6 +93,7 @@ class NetMirrorPlayer {
     this.seasons.onchange = () => { const id = this.seasons.value; return this.run(op => this.loadSeason(id, op)); };
     this.episodes.onchange = () => { const id = this.episodes.value; return this.run(op => this.loadVideo(id, op)); };
     document.getElementById('player-retry').onclick = () => this.run(this.retry);
+    document.getElementById('player-auth-retry').onclick = () => this.showAuth(this.operation);
     document.getElementById('player-auth-form').onsubmit = async e => {
       e.preventDefault();
       const button = document.getElementById('player-connect');
@@ -104,7 +105,12 @@ class NetMirrorPlayer {
         document.getElementById('player-otp').value = '';
         this.auth.hidden = true;
         await this.run(this.retry);
-      } catch (error) { if (this.isCurrent(op) && error.name !== 'AbortError') document.getElementById('player-auth-error').textContent = this.errorText(error); }
+      } catch (error) {
+        if (this.isCurrent(op) && error.name !== 'AbortError') {
+          document.getElementById('player-auth-error').textContent = this.authErrorText(error, true);
+          document.getElementById('player-auth-retry').hidden = false;
+        }
+      }
       finally { if (this.isCurrent(op)) button.disabled = false; }
     };
     document.getElementById('player-title-choice').onchange = e => { const id = e.target.value; return this.run(op => this.loadTitle(id, op)); };
@@ -198,6 +204,14 @@ class NetMirrorPlayer {
     const text = error.code === 'SOURCE_UNAVAILABLE' ? 'The video service cannot provide this episode right now. Please try again later.' : error.message;
     return this.serviceText(text) + (error.requestId ? ' Reference: ' + error.requestId : '');
   }
+  authErrorText(error, verifying = false) {
+    const text = error.code === 'AUTH_REQUIRED'
+      ? 'That login code was not accepted. Check the code and try again.'
+      : verifying
+        ? 'Could not verify the login code right now. Please try again.'
+        : 'Could not load the login instructions. Please try again.';
+    return text + (error.requestId ? ' Reference: ' + error.requestId : '');
+  }
   message(text, retry = false) {
     this.status.hidden = false;
     this.status.classList.toggle?.('is-loading', /^(Loading|Finding|Buffering)/.test(text));
@@ -227,16 +241,47 @@ class NetMirrorPlayer {
     this.auth.hidden = false;
     this.status.hidden = true;
     document.getElementById('player-connect').disabled = false;
-    document.getElementById('player-auth-error').textContent = '';
+    const errorNode = document.getElementById('player-auth-error');
+    const retryButton = document.getElementById('player-auth-retry');
+    const image = document.getElementById('player-otp-image');
+    const message = document.getElementById('player-auth-message');
+    const requestGeneration = this.authRequestGeneration = (this.authRequestGeneration || 0) + 1;
+    errorNode.textContent = '';
+    retryButton.hidden = true;
+    retryButton.disabled = true;
+    image.onload = null;
+    image.onerror = null;
+    image.removeAttribute('src');
+    image.hidden = true;
+    message.textContent = 'Loading login instructions…';
     try {
       const info = await this.api('auth', {}, op);
-      const image = document.getElementById('player-otp-image');
-      // This is a public login instruction image supplied by the service.
-      image.src = info.instructionImage;
-      image.hidden = !info.instructionImage;
-      document.getElementById('player-auth-message').textContent = this.serviceText(info.message || 'Enter the login code shown below.');
+      if (!this.isCurrent(op) || requestGeneration !== this.authRequestGeneration) return;
+      message.textContent = this.serviceText(info.message || 'Enter the login code shown below.');
+      if (typeof info.instructionImage === 'string' && /^https:\/\//i.test(info.instructionImage)) {
+        image.hidden = false;
+        image.onerror = () => {
+          if (!this.isCurrent(op) || requestGeneration !== this.authRequestGeneration) return;
+          image.hidden = true;
+          errorNode.textContent = 'The login instruction image could not be loaded. Reload it to try again.';
+          retryButton.hidden = false;
+          retryButton.disabled = false;
+        };
+        image.src = info.instructionImage;
+      } else {
+        errorNode.textContent = 'The login instructions are temporarily unavailable. Reload to try again.';
+        retryButton.hidden = false;
+      }
       document.getElementById('player-otp').focus();
-    } catch (error) { if (this.isCurrent(op) && error.name !== 'AbortError') document.getElementById('player-auth-error').textContent = this.errorText(error); }
+    } catch (error) {
+      if (this.isCurrent(op) && requestGeneration === this.authRequestGeneration && error.name !== 'AbortError') {
+        message.textContent = 'Enter the login code shown below.';
+        errorNode.textContent = this.authErrorText(error);
+        retryButton.hidden = false;
+      }
+    } finally {
+      if (this.isCurrent(op) && requestGeneration === this.authRequestGeneration) retryButton.disabled = false;
+    }
   }
   async open(item, extraTitle = '', episodeNum) {
     this.close();

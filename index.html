@@ -282,10 +282,11 @@
       <form id="player-auth-form" class="nf-connect-form">
         <h2>Connect to watch</h2>
         <p id="player-auth-message">Enter the login code shown below.</p>
-        <img id="player-otp-image" alt="Video access instructions" referrerpolicy="no-referrer">
+        <img id="player-otp-image" alt="Video access instructions" referrerpolicy="no-referrer" hidden>
         <label for="player-otp">Login code</label>
         <input id="player-otp" name="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4,10}" maxlength="10" required>
         <p id="player-auth-error" role="alert"></p>
+        <button class="nf-btn" id="player-auth-retry" type="button" hidden>Reload login instructions</button>
         <button class="nf-btn nf-btn-primary" id="player-connect" type="submit">Connect &amp; play</button>
       </form>
     </div>

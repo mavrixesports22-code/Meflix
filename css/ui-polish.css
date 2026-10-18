@@ -191,6 +191,7 @@ button, a, select { touch-action: manipulation; }
 .nf-connect-form label { font-size: 11px; text-align: left; }
 .nf-connect-form input { min-height: 52px; border-color: #ffffff30; background: #101014; }
 #player-auth-error:not(:empty) { background: #e5091412; border-radius: 6px; padding: 10px; color: #ff9ea7; }
+#player-auth-retry:not([hidden]) { min-height: 42px; border-color: #ffffff30; background: #25242b; color: #fff; }
 
 .nf-toast-container { bottom: max(24px, env(safe-area-inset-bottom)); right: var(--nf-gutter); max-width: min(440px, calc(100vw - 40px)); }
 .nf-toast { font-size: 12px; font-weight: 500; line-height: 1.65; border: 1px solid #ffffff18; border-left: 3px solid var(--nf-red); background: #25242bec; border-radius: 8px; padding: 14px 18px; }

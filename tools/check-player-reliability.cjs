@@ -57,7 +57,7 @@ function harness(useHls = true) {
         ok = authenticated;
         data = ok ? { title: 'Example', episode: 'Episode', url: '/media/' + requests.length } : { error: 'Connect again', code: 'AUTH_REQUIRED', retryable: false };
       } else if (route === 'auth' && options.method === 'POST') { authenticated = true; data = { authenticated: true }; }
-      else if (route === 'auth') data = { message: 'Enter code' };
+      else if (route === 'auth') data = { message: 'Enter code', instructionImage: 'https://cdn.example/otp.jpg' };
       else throw Error('Unexpected route: ' + route);
       return { ok, json: async () => data };
     }
@@ -211,6 +211,22 @@ async function main() {
     assert.equal(h.player.playId, null);
     assert.match(h.elements.get('player-status-text').textContent, /two recovery attempts/);
     assert.equal(h.timers.size, 0, 'Fatal failure stops watchdog and HUD timers');
+    h.player.close();
+  }
+  {
+    const h = harness();
+    h.hook = route => route.startsWith('playback')
+      ? { ok: false, json: async () => ({ error: 'Login required', code: 'AUTH_REQUIRED', retryable: false }) }
+      : route === 'auth'
+        ? { ok: false, json: async () => ({ error: 'Temporary upstream outage', code: 'SOURCE_UNAVAILABLE', retryable: true, requestId: 'auth-ref-1' }) }
+        : null;
+    await h.open();
+    const image = h.elements.get('player-otp-image'), error = h.elements.get('player-auth-error'), retry = h.elements.get('player-auth-retry');
+    assert.equal(image.hidden, true, 'Missing login instructions never show a broken image');
+    assert.match(error.textContent, /load the login instructions/);
+    assert.match(error.textContent, /auth-ref-1/);
+    assert.doesNotMatch(error.textContent, /cannot provide this episode/);
+    assert.equal(retry.hidden, false, 'Failed instruction requests expose an in-dialog retry');
     h.player.close();
   }
   {
