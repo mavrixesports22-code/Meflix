@@ -230,6 +230,19 @@ async function main() {
     h.player.close();
   }
   {
+    const h = harness();
+    h.hook = route => route.startsWith('playback')
+      ? { ok: false, json: async () => ({ error: 'Login required', code: 'AUTH_REQUIRED', retryable: false }) }
+      : route === 'auth'
+        ? { ok: false, json: async () => ({ error: 'Video service returned HTTP 403.', code: 'UPSTREAM_FORBIDDEN', upstreamStatus: 403, retryable: false, requestId: 'provider-403' }) }
+        : null;
+    await h.open();
+    const error = h.elements.get('player-auth-error').textContent;
+    assert.match(error, /video provider rejected the login-instructions request \(HTTP 403\)/i);
+    assert.match(error, /provider-403/);
+    h.player.close();
+  }
+  {
     const h = harness(), delayed = deferred();
     h.hook = route => route === 'title?id=slow' ? delayed.promise : null;
     const first = h.player.open({ title: 'Old', netmirrorId: 'slow' }); await tick();

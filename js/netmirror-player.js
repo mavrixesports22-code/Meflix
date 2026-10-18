@@ -209,7 +209,9 @@ class NetMirrorPlayer {
     return this.serviceText(text) + (error.requestId ? ' Reference: ' + error.requestId : '');
   }
   authErrorText(error, verifying = false) {
-    const text = error.code === 'AUTH_REQUIRED'
+    const text = error.upstreamStatus === 403 || error.code === 'UPSTREAM_FORBIDDEN'
+      ? 'The video provider rejected the login-instructions request (HTTP 403). Please try again later.'
+      : error.code === 'AUTH_REQUIRED'
       ? 'That login code was not accepted. Check the code and try again.'
       : verifying
         ? 'Could not verify the login code right now. Please try again.'
