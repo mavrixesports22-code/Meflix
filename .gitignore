@@ -13,7 +13,8 @@ yarn-error.log*
 
 # Environment variables
 .env
-.env*.local
+.env.*
+!.env.example
 
 # OS Metadata
 .DS_Store

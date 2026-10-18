@@ -87,7 +87,7 @@ async function testVercelServerlessFunction() {
       setHeader(k, v) { headers[k] = v; },
       end(data) { if (data) body += data; }
     };
-    healthHandler({}, res);
+    await healthHandler({}, res);
     assert.equal(statusCode, 200);
     const data = JSON.parse(body);
     assert.equal(data.service, 'Meflix');

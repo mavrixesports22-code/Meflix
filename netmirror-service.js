@@ -15,7 +15,8 @@ const pendingTitles = new Map();
 const recentFailures = [];
 
 const envSecret = typeof process !== 'undefined' && process?.env ? process.env.SESSION_SECRET : null;
-const SERVER_SECRET = crypto.createHash('sha256').update(envSecret || 'meflix-netmirror-vercel-production-key-2026').digest();
+const hasSessionSecret = typeof envSecret === 'string' && Buffer.byteLength(envSecret, 'utf8') >= 32;
+const SERVER_SECRET = crypto.createHash('sha256').update(envSecret || 'meflix-local-development-only').digest();
 
 function sealSession(data) {
   try {
@@ -324,6 +325,9 @@ async function media(req, res, session, handle) {
 async function handleNetMirror(req, res, url) {
   if (!url.pathname.startsWith('/api/netmirror/')) return false;
   try {
+    if (process.env.VERCEL && !hasSessionSecret) {
+      throw new ServiceError('Playback is not configured yet. Set a SESSION_SECRET of at least 32 characters in the Vercel project environment.', 503, 'CONFIGURATION_REQUIRED', false);
+    }
     if (req.headers.origin) {
       try {
         const originUrl = new URL(req.headers.origin);

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node tools/check-media-resources.cjs && node tools/check-catalog-data.cjs && node tools/check-player-reliability.cjs && node tools/check-upstream-reliability.cjs && node tools/check-catalog.cjs && node tools/check-home-ui.cjs && node tools/check-watch-history.cjs && node tools/check-netmirror.cjs"
+    "test": "node tools/check-media-resources.cjs && node tools/check-catalog-data.cjs && node tools/check-player-reliability.cjs && node tools/check-upstream-reliability.cjs && node tools/check-catalog.cjs && node tools/check-home-ui.cjs && node tools/check-watch-history.cjs && node tools/check-netmirror.cjs && node tools/verify-vercel.cjs"
   },
   "engines": {
     "node": ">=20.0.0"

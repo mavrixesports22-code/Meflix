@@ -46,8 +46,8 @@ Engineered for zero-dependency standalone execution and seamless serverless prod
 5. **Root Directory**: `./` (leave default).
 6. **Build Command**: None needed (zero-build architecture).
 7. **Output Directory**: `./` (leave default).
-8. (Optional) Set Environment Variable:
-   - `SESSION_SECRET`: Any 32+ character random string (used for AES-256-GCM session cookie sealing).
+8. Set the required Environment Variable for **Production**, **Preview**, and **Development**:
+   - `SESSION_SECRET`: Generate a unique value with `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`. It seals the HttpOnly playback session cookie. Without it, the API returns a configuration error instead of using a known production key.
 9. Click **Deploy**.
 
 Vercel automatically detects:
@@ -83,10 +83,11 @@ Visit [http://localhost:5173](http://localhost:5173).
 
 ## 🧪 Test Suite
 
-Run the full verification test suite (covers session isolation, cache boundaries, UI state machines, upstream retry resilience, and Vercel serverless integration):
+Run the full verification suite (including the Vercel serverless handler checks):
 
 ```bash
 npm test
+node tools/verify-vercel.cjs
 ```
 
 ### Run Individual Checks
