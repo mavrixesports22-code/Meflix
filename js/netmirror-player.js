@@ -187,7 +187,7 @@ class NetMirrorPlayer {
       if (!data || typeof data !== 'object' || Array.isArray(data)) throw Object.assign(new Error('The video service returned an invalid response. Please retry.'), { retryable: true });
       if (!response.ok) {
         const error = new Error(this.serviceText(data.error || 'The video service is unavailable.'));
-        Object.assign(error, { code: data.code, retryable: data.retryable, requestId: data.requestId });
+        Object.assign(error, { code: data.code, upstreamStatus: data.upstreamStatus, retryable: data.retryable, requestId: data.requestId });
         throw error;
       }
       return data;
@@ -201,7 +201,11 @@ class NetMirrorPlayer {
     }
   }
   errorText(error) {
-    const text = error.code === 'SOURCE_UNAVAILABLE' ? 'The video service cannot provide this episode right now. Please try again later.' : error.message;
+    const text = error.upstreamStatus === 403 || error.code === 'UPSTREAM_FORBIDDEN'
+      ? 'The video service rejected this request (HTTP 403). Retry later or contact the service provider.'
+      : error.code === 'SOURCE_UNAVAILABLE'
+        ? 'The video service cannot provide this episode right now. Please try again later.'
+        : error.message;
     return this.serviceText(text) + (error.requestId ? ' Reference: ' + error.requestId : '');
   }
   authErrorText(error, verifying = false) {

@@ -462,7 +462,7 @@ async function handleNetMirror(req, res, url) {
       console.error('[netmirror]', JSON.stringify(record));
     }
     if (!res.headersSent) json(res, error.status || 502, { error: error instanceof ServiceError ? error.message : 'Could not reach NetMirror. Try again shortly.',
-      code, retryable: error instanceof ServiceError ? error.retryable : true, requestId });
+      code, upstreamStatus: error.upstreamStatus || null, retryable: error instanceof ServiceError ? error.retryable : true, requestId });
     else res.destroy();
   }
   return true;

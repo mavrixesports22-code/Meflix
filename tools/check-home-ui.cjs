@@ -99,6 +99,13 @@ async function main() {
     const loading = service.flush(); service.queue.add('nm-2'); await service.flush(); assert.equal(requests, 1, 'Only one hydration batch may be in flight');
     pending.resolve({ items: [] }); await loading; assert.equal(service.loading.size, 0); assert.equal(service.flushing, false); assert.equal(h.timers.size, 1, 'Queued work resumes after the current batch finishes');
   }
+  {
+    const h = harness(), service = new h.Service(h.app);
+    h.app.catalog = [{ id: 'local-title', title: 'Example Series', netmirrorId: '100', tags: ['Mystery'], genres: ['Drama'] }];
+    service.api = async () => { throw new Error('Video service returned HTTP 403.'); };
+    const found = await service.search('example');
+    assert.deepEqual(found.map(item => item.id), ['local-title'], 'Search falls back to titles already loaded when the provider rejects search');
+  }
   console.log('PASS: stable home refresh, navigation/search races, in-place hydration, artwork fallback, single hover bindings, slider boundaries, and bounded hydration batches');
 }
 main().catch(error => { console.error(error.stack); process.exitCode = 1; });

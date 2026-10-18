@@ -69,8 +69,21 @@ class NetflixCatalogService {
     return this.app.catalog.find(x => x.id === id);
   }
   async search(query, signal) {
-    const data = await this.api('search?q=' + encodeURIComponent(query), signal);
-    return this.upsert(data.items);
+    try {
+      const data = await this.api('search?q=' + encodeURIComponent(query), signal);
+      return this.upsert(data.items);
+    } catch (error) {
+      if (signal?.aborted || error.name === 'AbortError') throw error;
+      const term = String(query || '').toLocaleLowerCase().trim();
+      if (!term) throw error;
+      const local = this.app.catalog.filter(item =>
+        String(item.title || '').toLocaleLowerCase().includes(term) ||
+        (item.tags || []).some(tag => String(tag).toLocaleLowerCase().includes(term)) ||
+        (item.genres || []).some(genre => String(genre).toLocaleLowerCase().includes(term))
+      ).slice(0, 24);
+      if (local.length) return local;
+      throw error;
+    }
   }
   observe(root) {
     for (const node of this.observed) if (!node.isConnected) { this.observer?.unobserve(node); this.observed.delete(node); }

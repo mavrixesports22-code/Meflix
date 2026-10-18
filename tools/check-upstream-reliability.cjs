@@ -21,7 +21,7 @@ async function main() {
   assert.equal(calls, 3, 'A persistent outage must stop after three attempts');
   calls = 0;
   request = createTransport({ validateUrl, sleep: async () => {}, fetchImpl: async () => { calls++; return new Response('denied', { status: 403 }); } });
-  await assert.rejects(request('https://provider.example/test'), error => error.upstreamStatus === 403 && !error.retryable);
+  await assert.rejects(request('https://provider.example/test'), error => error.code === 'UPSTREAM_FORBIDDEN' && error.upstreamStatus === 403 && !error.retryable);
   assert.equal(calls, 1, 'Authentication/permission failures must not be blindly retried');
   const seen = [];
   request = createTransport({ validateUrl, fetchImpl: async (url, options) => {
