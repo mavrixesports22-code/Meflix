@@ -132,6 +132,15 @@ function cardFrom(id, title = '') {
     match: '', resolution: '', audio: '', tags: [], genres: [], cast: [], creator: '', isOriginal: false, episodes: [] };
 }
 
+function currentArtwork(card, depth = 0) {
+  const id = String(card?.netmirrorId || '');
+  if (!/^\d{1,20}$/.test(id)) return card;
+  const suggestions = Array.isArray(card.suggestions) && depth < 2
+    ? card.suggestions.map(item => currentArtwork(item, depth + 1))
+    : card.suggestions;
+  return { ...card, poster: artwork(id, 'v'), backdrop: artwork(id, 'h'), ...(suggestions ? { suggestions } : {}) };
+}
+
 async function readHome() {
   if (homeCache && homeCache.until > Date.now()) return homeCache;
   let data;
@@ -407,7 +416,7 @@ async function handleNetMirror(req, res, url) {
     } else if (action === 'home' && req.method === 'GET') {
       const home = await readHome();
       const ids = [...new Set([...home.featured, ...home.rows.flatMap(x => x.items.map(id => id.slice(3)))])];
-      json(res, 200, { shelves: home.rows, items: ids.map(id => titleCache.get(id)?.value?.card || cardFrom(id)), featured: home.featured.map(id => 'nm-' + id), stale: !!home.stale, updatedAt: home.updatedAt });
+      json(res, 200, { shelves: home.rows, items: ids.map(id => currentArtwork(titleCache.get(id)?.value?.card || cardFrom(id))), featured: home.featured.map(id => 'nm-' + id), stale: !!home.stale, updatedAt: home.updatedAt });
     } else if (action === 'cards' && req.method === 'GET') {
       const ids = [...new Set(idsFrom(url.searchParams.get('ids')))].slice(0, 24);
       if (!ids.length) throw new ServiceError('Choose valid title IDs.', 400);
@@ -416,7 +425,7 @@ async function handleNetMirror(req, res, url) {
       await Promise.all(Array.from({ length: Math.min(4, ids.length) }, async () => {
         while (cursor < ids.length) { const id = ids[cursor++]; try { items.push((await readTitle(id)).card); } catch { items.push(cardFrom(id)); } }
       }));
-      json(res, 200, { items: ids.map(id => items.find(x => x.netmirrorId === id)) });
+      json(res, 200, { items: ids.map(id => currentArtwork(items.find(x => x.netmirrorId === id))) });
     } else if (action === 'search' && req.method === 'GET') {
       const query = (url.searchParams.get('q') || '').trim().slice(0, 200);
       if (!query) throw new ServiceError('Enter a title.', 400);
@@ -424,7 +433,9 @@ async function handleNetMirror(req, res, url) {
       const results = (result.searchResult || []).filter(x => /^\d{1,20}$/.test(x.id)).map(x => ({ id: String(x.id), title: x.t || 'View title' }));
       json(res, 200, { results, items: results.map(x => cardFrom(x.id, x.title)) });
     } else if (action === 'title' && req.method === 'GET') {
-      json(res, 200, await readTitle(idParam(url)));
+      const title = await readTitle(idParam(url));
+      title.card = currentArtwork(title.card);
+      json(res, 200, title);
     } else if (action === 'episodes' && req.method === 'GET') {
       const result = await api('episodes.php?id=' + idParam(url), session);
       json(res, 200, { episodes: identified(result.episodes) });
@@ -468,4 +479,4 @@ async function handleNetMirror(req, res, url) {
   return true;
 }
 
-module.exports = { handleNetMirror, rewriteManifest, isPrivate, validManifest, readMediaStart, sessionFor, cardFrom, playbackResult, SERVER_SECRET };
+module.exports = { handleNetMirror, rewriteManifest, isPrivate, validManifest, readMediaStart, sessionFor, cardFrom, currentArtwork, playbackResult, SERVER_SECRET };

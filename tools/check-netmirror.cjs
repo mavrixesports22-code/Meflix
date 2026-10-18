@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { isPrivate, rewriteManifest, cardFrom, playbackResult } = require('../netmirror-service');
+const { isPrivate, rewriteManifest, cardFrom, currentArtwork, playbackResult } = require('../netmirror-service');
 async function checkPlayerFlow(useHls = false) {
   const elements = new Map();
   class Element {
@@ -97,6 +97,8 @@ async function main() {
   assert.equal(isPrivate('8.8.8.8'), false);
   const seededCard = cardFrom('82813021');
   assert.equal(seededCard.backdrop, 'https://imgcdn.kim/poster/h/82813021.jpg', 'Public artwork uses the browser path instead of blocked Vercel egress');
+  const cachedCard = currentArtwork({ ...seededCard, poster: '/api/netmirror/artwork?id=82813021&layout=v', backdrop: '/api/netmirror/artwork?id=82813021&layout=h' });
+  assert.equal(cachedCard.poster, 'https://imgcdn.kim/poster/v/82813021.jpg', 'Cached title records must refresh artwork URLs after a deployment changes the image strategy');
   assert.equal(seededCard.poster, 'https://imgcdn.kim/poster/v/82813021.jpg');
   {
     const calls = [];
