@@ -12,6 +12,10 @@
     {
       "source": "/netflix",
       "destination": "/index.html"
+    },
+    {
+      "source": "/netflix/",
+      "destination": "/index.html"
     }
   ],
   "headers": [
