@@ -73,13 +73,11 @@ async function publicUrl(value) {
 const request = createTransport({ validateUrl: publicUrl });
 let discovering;
 
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-
 async function baseUrl(signal, refresh = false) {
   if (refresh) discovery = null;
   if (discovery && discovery.until > Date.now()) return discovery.base;
   if (!discovering) discovering = (async () => {
-    const data = await request('https://mobiledetect.app/checknewtv.php', { attempts: 2, timeoutMs: 8000, headers: { 'User-Agent': DEFAULT_USER_AGENT }, consume: response => response.json() });
+    const data = await request('https://mobiledetect.app/checknewtv.php', { attempts: 2, timeoutMs: 8000, consume: response => response.json() });
     const url = await publicUrl(Buffer.from(data.token_hash || '', 'base64').toString('utf8'));
     discovery = { base: url.origin, until: Date.now() + 300000 };
     return discovery.base;
@@ -91,7 +89,7 @@ async function api(route, session, headers = {}, withOrigin = false, baseOverrid
   const signal = AbortSignal.timeout(18000);
   const base = baseOverride || await baseUrl(signal);
   const options = { attempts: 2, timeoutMs: 8000, signal, consume: response => response.json(),
-    headers: { Accept: 'application/json', Ott: 'nf', Usertoken: session.token || 'none', 'User-Agent': DEFAULT_USER_AGENT, ...headers } };
+    headers: { Accept: 'application/json', Ott: 'nf', Usertoken: session.token || 'none', ...headers } };
   let data, apiOrigin = base;
   try { data = await request(base + '/newtv/' + route, options); }
   catch (error) {
@@ -279,7 +277,7 @@ async function bodyJson(req) {
 }
 
 async function sourceRequest(entry, session, range, preflight = false, consume) {
-  const headers = { Ott: 'nf', 'Accept-Encoding': 'identity', 'User-Agent': DEFAULT_USER_AGENT };
+  const headers = { Ott: 'nf', 'Accept-Encoding': 'identity' };
   if (entry.apiOrigin && new URL(entry.url).origin === entry.apiOrigin) headers.Usertoken = session.token;
   if (entry.referer) headers.Referer = entry.referer;
   if (range) headers.Range = range;
@@ -353,8 +351,8 @@ async function media(req, res, session, handle) {
 async function handleNetMirror(req, res, url) {
   if (!url.pathname.startsWith('/api/netmirror/')) return false;
   try {
-    if (process.env.VERCEL && !hasSessionSecret) {
-      throw new ServiceError('Playback is not configured yet. Set a SESSION_SECRET of at least 32 characters in the Vercel project environment.', 503, 'CONFIGURATION_REQUIRED', false);
+    if ((process.env.VERCEL || process.env.K_SERVICE) && !hasSessionSecret) {
+      throw new ServiceError('Playback is not configured yet. Set a SESSION_SECRET of at least 32 characters in the production environment.', 503, 'CONFIGURATION_REQUIRED', false);
     }
     if (req.headers.origin) {
       try {
