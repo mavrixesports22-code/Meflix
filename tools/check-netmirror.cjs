@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { isPrivate, rewriteManifest } = require('../netmirror-service');
+const { isPrivate, rewriteManifest, cardFrom, playbackResult } = require('../netmirror-service');
 async function checkPlayerFlow(useHls = false) {
   const elements = new Map();
   class Element {
@@ -95,6 +95,21 @@ async function main() {
   assert.equal(isPrivate('169.254.169.254'), true);
   assert.equal(isPrivate('::1'), true);
   assert.equal(isPrivate('8.8.8.8'), false);
+  const seededCard = cardFrom('82813021');
+  assert.equal(seededCard.backdrop, 'https://imgcdn.kim/poster/h/82813021.jpg', 'Public artwork uses the browser path instead of blocked Vercel egress');
+  assert.equal(seededCard.poster, 'https://imgcdn.kim/poster/v/82813021.jpg');
+  {
+    const calls = [];
+    const response = await playbackResult('episode-1', { token: 'session-token' }, async (...args) => {
+      calls.push(args);
+      return calls.length === 1
+        ? { data: { status: 'unavailable' }, apiOrigin: 'https://old.example' }
+        : { data: { status: 'ok', video_link: 'https://cdn.example/video.m3u8' }, apiOrigin: 'https://new.example' };
+    }, async (_signal, refresh) => { assert.equal(refresh, true); return 'https://new.example'; });
+    assert.equal(calls.length, 2, 'No-player response retries once only after discovery changes host');
+    assert.equal(calls[1][4], 'https://new.example');
+    assert.equal(response.data.status, 'ok');
+  }
   const session = { resources: new Map(), resourceKeys: new Map() };
   const rewritten = rewriteManifest('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin"\nclip.ts?part=1\n', 'https://media.example/season/index.m3u8', session, 'https://example.com');
   assert.equal(session.resources.size, 2);

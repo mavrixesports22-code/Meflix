@@ -87,9 +87,9 @@ async function baseUrl(signal, refresh = false) {
   return discovering;
 }
 
-async function api(route, session, headers = {}, withOrigin = false) {
+async function api(route, session, headers = {}, withOrigin = false, baseOverride = '') {
   const signal = AbortSignal.timeout(18000);
-  const base = await baseUrl(signal);
+  const base = baseOverride || await baseUrl(signal);
   const options = { attempts: 2, timeoutMs: 8000, signal, consume: response => response.json(),
     headers: { Accept: 'application/json', Ott: 'nf', Usertoken: session.token || 'none', 'User-Agent': DEFAULT_USER_AGENT, ...headers } };
   let data, apiOrigin = base;
@@ -105,7 +105,26 @@ async function api(route, session, headers = {}, withOrigin = false) {
 }
 
 const idsFrom = value => (Array.isArray(value) ? value.map(x => String(x?.id || x || '')) : String(value || '').split(',')).filter(x => /^\d{1,20}$/.test(x));
-const artwork = (id, layout = 'h') => `/api/netmirror/artwork?id=${id}&layout=${layout}`;
+function artwork(id, layout = 'h') {
+  const template = homeCache?.templates?.[layout];
+  if (template?.includes('------------------')) {
+    try {
+      const url = new URL(template.replace('------------------', id));
+      // Public poster URLs should load in the browser; the CDN blocks Vercel egress.
+      if (url.protocol === 'https:' && ['imgcdn.kim', 'tv.imgcdn.kim'].includes(url.hostname) && !url.username && !url.password && !url.port) return url.href;
+    } catch {}
+  }
+  return `/api/netmirror/artwork?id=${id}&layout=${layout}`;
+}
+
+async function playbackResult(id, session, request = api, discover = baseUrl) {
+  let response = await request('player.php?id=' + id, session, {}, true);
+  if (response.data.status === 'otp' || (response.data.status === 'ok' && response.data.video_link)) return response;
+  // A stale discovery endpoint may serve the catalogue but no player link.
+  const refreshedBase = await discover(AbortSignal.timeout(18000), true);
+  if (refreshedBase !== response.apiOrigin) response = await request('player.php?id=' + id, session, {}, true, refreshedBase);
+  return response;
+}
 
 function cardFrom(id, title = '') {
   return { id: 'nm-' + id, netmirrorId: String(id), title: title || 'View title', type: 'title',
@@ -411,9 +430,15 @@ async function handleNetMirror(req, res, url) {
       json(res, 200, { episodes: identified(result.episodes) });
     } else if (action === 'playback' && req.method === 'GET') {
       if (!session.token) throw new ServiceError('Connect to NetMirror to play this title.', 401, 'AUTH_REQUIRED');
-      const { data: result, apiOrigin } = await api('player.php?id=' + idParam(url), session, {}, true);
+      const id = idParam(url);
+      const { data: result, apiOrigin } = await playbackResult(id, session);
       if (result.status === 'otp') { session.token = ''; throw new ServiceError('Your NetMirror session expired. Enter the current OTP.', 401, 'AUTH_REQUIRED'); }
-      if (result.status !== 'ok' || !result.video_link) throw new ServiceError('This video is currently unavailable from the service.', 502, 'SOURCE_UNAVAILABLE', true);
+      if (result.status !== 'ok' || !result.video_link) {
+        const error = new ServiceError('This video is currently unavailable from the service.', 502, 'SOURCE_UNAVAILABLE', true);
+        error.diagnostic = 'player_status:' + String(result.status || 'missing').replace(/[^a-z0-9_-]/gi, '').slice(0, 32);
+        error.titleId = id;
+        throw error;
+      }
       await publicUrl(result.video_link);
       const referer = result.referer ? (await publicUrl(result.referer)).href : '';
       const address = resource(session, result.video_link, referer, 'hls', apiOrigin);
@@ -430,7 +455,8 @@ async function handleNetMirror(req, res, url) {
     const requestId = crypto.randomBytes(6).toString('hex');
     const code = error instanceof ServiceError ? error.code : 'SOURCE_UNAVAILABLE';
     if ((error.status || 502) >= 500 || error.code === 'SOURCE_EXPIRED') {
-      const record = { requestId, at: new Date().toISOString(), operation: url.pathname.split('/')[3] || 'unknown', code, upstreamStatus: error.upstreamStatus || null };
+      const record = { requestId, at: new Date().toISOString(), operation: url.pathname.split('/')[3] || 'unknown', code, upstreamStatus: error.upstreamStatus || null,
+        ...(error.diagnostic ? { diagnostic: error.diagnostic } : {}), ...(error.titleId ? { titleId: error.titleId } : {}) };
       recentFailures.push(record);
       if (recentFailures.length > 200) recentFailures.shift();
       console.error('[netmirror]', JSON.stringify(record));
@@ -442,4 +468,4 @@ async function handleNetMirror(req, res, url) {
   return true;
 }
 
-module.exports = { handleNetMirror, rewriteManifest, isPrivate, validManifest, readMediaStart, sessionFor, SERVER_SECRET };
+module.exports = { handleNetMirror, rewriteManifest, isPrivate, validManifest, readMediaStart, sessionFor, cardFrom, playbackResult, SERVER_SECRET };
