@@ -72,11 +72,13 @@ async function publicUrl(value) {
 const request = createTransport({ validateUrl: publicUrl });
 let discovering;
 
+const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
 async function baseUrl(signal, refresh = false) {
   if (refresh) discovery = null;
   if (discovery && discovery.until > Date.now()) return discovery.base;
   if (!discovering) discovering = (async () => {
-    const data = await request('https://mobiledetect.app/checknewtv.php', { attempts: 2, timeoutMs: 6000, consume: response => response.json() });
+    const data = await request('https://mobiledetect.app/checknewtv.php', { attempts: 2, timeoutMs: 8000, headers: { 'User-Agent': DEFAULT_USER_AGENT }, consume: response => response.json() });
     const url = await publicUrl(Buffer.from(data.token_hash || '', 'base64').toString('utf8'));
     discovery = { base: url.origin, until: Date.now() + 300000 };
     return discovery.base;
@@ -87,8 +89,8 @@ async function baseUrl(signal, refresh = false) {
 async function api(route, session, headers = {}, withOrigin = false) {
   const signal = AbortSignal.timeout(18000);
   const base = await baseUrl(signal);
-  const options = { attempts: 2, timeoutMs: 6000, signal, consume: response => response.json(),
-    headers: { Accept: 'application/json', Ott: 'nf', Usertoken: session.token || 'none', ...headers } };
+  const options = { attempts: 2, timeoutMs: 8000, signal, consume: response => response.json(),
+    headers: { Accept: 'application/json', Ott: 'nf', Usertoken: session.token || 'none', 'User-Agent': DEFAULT_USER_AGENT, ...headers } };
   let data, apiOrigin = base;
   try { data = await request(base + '/newtv/' + route, options); }
   catch (error) {
@@ -248,13 +250,13 @@ async function bodyJson(req) {
 }
 
 async function sourceRequest(entry, session, range, preflight = false, consume) {
-  const headers = { Ott: 'nf', 'Accept-Encoding': 'identity' };
+  const headers = { Ott: 'nf', 'Accept-Encoding': 'identity', 'User-Agent': DEFAULT_USER_AGENT };
   if (entry.apiOrigin && new URL(entry.url).origin === entry.apiOrigin) headers.Usertoken = session.token;
   if (entry.referer) headers.Referer = entry.referer;
   if (range) headers.Range = range;
   try {
-    return await request(entry.url, { headers, consume, attempts: preflight ? 2 : 3, timeoutMs: preflight ? 4000 : 12000,
-      signal: AbortSignal.timeout(preflight ? 9000 : 60000) });
+    return await request(entry.url, { headers, consume, attempts: preflight ? 2 : 3, timeoutMs: preflight ? 8000 : 15000,
+      signal: AbortSignal.timeout(preflight ? 15000 : 60000) });
   } catch (error) {
     if ([401,403,404,410].includes(error.upstreamStatus)) throw new ServiceError('This video link expired. Refreshing the source may restore playback.', 410, 'SOURCE_EXPIRED', true, error.upstreamStatus);
     throw error;
@@ -412,8 +414,12 @@ async function handleNetMirror(req, res, url) {
       const referer = result.referer ? (await publicUrl(result.referer)).href : '';
       const address = resource(session, result.video_link, referer, 'hls', apiOrigin);
       const entry = lookupResource(session, address.split('/').at(-1));
-      const { upstream: preflight, text } = await sourceRequest(entry, session, null, true, response => readMediaStart(response, 'hls'));
-      entry.preflight = { text, base: preflight.url, until: Date.now() + 5000 };
+      try {
+        const { upstream: preflight, text } = await sourceRequest(entry, session, null, true, response => readMediaStart(response, 'hls'));
+        entry.preflight = { text, base: preflight.url, until: Date.now() + 5000 };
+      } catch (preflightErr) {
+        console.warn('[netmirror] Preflight deferred:', preflightErr.message);
+      }
       json(res, 200, { url: address, type: 'hls', title: result.title, episode: result.ep_title, source: 'netmirror' });
     } else json(res, 404, { error: 'Unknown NetMirror endpoint.' });
   } catch (error) {
