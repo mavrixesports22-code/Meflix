@@ -1,0 +1,24 @@
+{
+  "name": "meflix",
+  "version": "1.0.0",
+  "description": "Meflix — Production-Ready Movies & TV Streaming Platform with Live Discovery and Dynamic Video Player",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node tools/check-media-resources.cjs && node tools/check-catalog-data.cjs && node tools/check-player-reliability.cjs && node tools/check-upstream-reliability.cjs && node tools/check-catalog.cjs && node tools/check-home-ui.cjs && node tools/check-watch-history.cjs && node tools/check-netmirror.cjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "meflix",
+    "netflix-clone",
+    "streaming",
+    "hls-player",
+    "entertainment",
+    "video-player"
+  ],
+  "author": "Mavrix Technologies",
+  "license": "MIT"
+}

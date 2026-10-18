@@ -1,0 +1,93 @@
+/* Phone layout. Desktop keeps its existing browsing surface. */
+.mf-mobile-tabs, .mf-mobile-feature-poster, .mf-mobile-card-poster,
+.mf-mobile-feature-genres, .mf-mobile-list { display: none; }
+@media (max-width: 700px) {
+  :root { --nf-bg: #080808; --nf-gutter: 16px; --nf-header: calc(110px + env(safe-area-inset-top)); --mf-tab-height: calc(64px + env(safe-area-inset-bottom)); }
+  html { scroll-padding-bottom: calc(var(--mf-tab-height) + 16px); }
+  body { padding-bottom: var(--mf-tab-height); overscroll-behavior-y: contain; }
+  .nf-navbar { padding: env(safe-area-inset-top) 16px 0; height: var(--nf-header); grid-template-rows: 60px 50px; background: linear-gradient(#151515f5, #151515ed); backdrop-filter: blur(16px); border-bottom: 0; }
+  .nf-navbar.scrolled { background: #111111f7; }
+  .nf-navbar .meflix-wordmark { width: 112px; height: 40px; }
+  .nf-nav-right { gap: 4px; }
+  .nf-nav-right .nf-app-switch-btn, .nf-nav-right > .nf-icon-btn { display: none; }
+  .nf-nav-links { gap: 8px; align-items: center; padding-bottom: 8px; }
+  .nf-nav-links li:has([data-nav=home]), .nf-nav-links li:has([data-nav=popular]), .nf-nav-links li:has([data-nav=my-list]) { display: none; }
+  .nf-nav-link { font-size: 13px; font-weight: 500; min-height: 34px; padding: 7px 15px; border: 1px solid #ffffff70; border-radius: 20px; }
+  .nf-nav-link.active { background: #ffffff20; border-color: #fff; }
+  .nf-nav-link.active::after { display: none; }
+  .nf-search-box.open { top: calc(env(safe-area-inset-top) + 8px); left: 12px; right: 12px; background: #262626; border-color: #555; border-radius: 8px; }
+  .nf-search-input { font-size: 16px; }
+  .nf-profile-dropdown { width: min(280px, calc(100vw - 32px)); top: 49px; }
+
+  .mf-mobile-tabs { display: flex; position: fixed; z-index: 990; inset: auto 0 0; height: var(--mf-tab-height); padding: 4px 8px max(4px, env(safe-area-inset-bottom)); background: #131313f7; border-top: 1px solid #ffffff0c; backdrop-filter: blur(18px); justify-content: space-around; }
+  .mf-mobile-tabs button { flex: 1; max-width: 180px; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #9c9c9c; font-size: 10px; font-weight: 500; background: transparent; border: 0; border-radius: 8px; }
+  .mf-mobile-tabs svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+  .mf-mobile-tabs button[aria-current=page] { color: #fff; font-weight: 700; }
+  .mf-mobile-tabs button[aria-current=page] svg { stroke-width: 2.2; }
+  .mf-mobile-tabs button:active { background: #ffffff0d; }
+  body:has(.nf-player-overlay.active:not(.minimized)) .mf-mobile-tabs, body:has(.nf-modal-backdrop.open) .mf-mobile-tabs { visibility: hidden; pointer-events: none; }
+
+  .nf-billboard { position: relative; margin: calc(var(--nf-header) + 4px) 16px 24px; width: calc(100% - 32px); height: min(132vw, 590px); min-height: 420px; max-height: none; border-radius: 12px; overflow: hidden; border: 1px solid #ffffff27; background: #242126; box-shadow: 0 12px 40px #0007; }
+  .nf-billboard-backdrop, .nf-billboard-video-container { display: none; }
+  .mf-mobile-feature-poster { position: absolute; display: block; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+  .nf-billboard-overlay { background: linear-gradient(0deg, #191619 0%, #191619eb 8%, #191619b0 26%, transparent 65%); }
+  .nf-billboard-content { position: relative; z-index: 2; width: 100%; padding: 24px 16px 16px; gap: 10px; align-items: center; text-align: center; }
+  .nf-billboard-title { font-family: 'Outfit', var(--nf-font); font-weight: 800; font-size: clamp(25px, 7.5vw, 38px); line-height: 1.06; letter-spacing: -.7px; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .nf-billboard-badge { gap: 5px; font-size: 8px; letter-spacing: 2px; }
+  .nf-billboard-badge .meflix-monogram { width: 26px; height: 22px; }
+  .nf-billboard-meta, .nf-billboard-synopsis, #billboard-info-btn { display: none; }
+  .mf-mobile-feature-genres { display: block; font-size: 11px; line-height: 1.5; color: #eee; min-height: 16px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nf-billboard-actions { width: 100%; display: flex; gap: 10px; margin-top: 4px; }
+  .nf-billboard-actions > .nf-btn { flex: 1; min-width: 0; min-height: 42px; justify-content: center; padding: 10px 8px; font-size: 14px; border-radius: 5px; }
+  .mf-mobile-list { display: inline-flex; background: #ffffff25; }
+  .mf-mobile-list span { font-size: 22px; line-height: 16px; }
+
+  .nf-main-content { margin-top: 0; gap: 22px; padding-bottom: 12px; }
+  .nf-main-content.without-hero { padding-top: calc(var(--nf-header) + 20px); }
+  .nf-shelf-header { margin-bottom: 8px; align-items: center; }
+  .nf-shelf-title { font-size: 18px; font-weight: 700; letter-spacing: -.35px; }
+  .nf-shelf-explore { font-size: 10px; }
+  .nf-slider-track { gap: 8px; padding-top: 2px; padding-bottom: 2px; scroll-snap-type: x proximity; scroll-padding-inline: 16px; }
+  .nf-card { flex: 0 0 112px; width: 112px; aspect-ratio: 2 / 3; border-radius: 5px; background: #222; scroll-snap-align: start; overflow: hidden; }
+  .nf-card > .nf-card-thumb { display: none; }
+  .mf-mobile-card-poster { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .nf-card-caption { padding: 24px 6px 7px; font-size: 9px; line-height: 1.25; }
+  .nf-card:not(:has(.artwork-unavailable)) .nf-card-caption { display: none; }
+  .nf-card-badge { top: 6px; left: 5px; font-size: 7px; padding: 3px 4px; }
+  .nf-top10-track { gap: 6px; }
+  .nf-top10-card { width: 152px; height: 174px; }
+  .nf-top10-poster-wrap { width: 110px; height: 166px; }
+  .nf-top10-rank { font-size: 136px; letter-spacing: -13px; }
+  .nf-search-results-section { padding: calc(var(--nf-header) + 16px) 16px 24px; }
+  .nf-search-heading { font-size: 22px; }
+  .nf-search-grid, .nf-modal .nf-search-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .nf-search-grid .nf-card { width: 100%; min-width: 0; }
+  .nf-browse-heading h1 { font-size: 27px; }
+  .nf-browse-heading .nf-eyebrow, .nf-browse-heading > p:last-child { display: none; }
+  .nf-empty-state { padding: 20px 16px 40px; }
+
+  .nf-modal-backdrop { padding: 0; background: #000; backdrop-filter: none; }
+  .nf-modal { width: 100%; max-width: none; min-height: 100dvh; border-radius: 0; border: 0; margin: 0; box-shadow: none; }
+  .nf-modal-close-btn { position: fixed; top: calc(env(safe-area-inset-top) + 12px); right: 12px; width: 44px; height: 44px; z-index: 20; background: #181818de; }
+  .nf-modal-hero { min-height: 260px; }
+  .nf-modal-hero-content { left: 16px; right: 16px; bottom: 16px; }
+  .nf-modal-title { padding-top: 36px; }
+  .nf-modal-body { padding: 12px 16px calc(32px + env(safe-area-inset-bottom)); }
+  .nf-modal-hero-actions > .nf-btn { flex: 1; justify-content: center; }
+  .nf-modal-credits { gap: 4px; }
+  .nf-episode-card { padding: 12px 0; gap: 10px; }
+  .nf-ep-thumb-wrap { width: 112px; border-radius: 4px; }
+  .nf-ep-num { display: none; }
+  .nf-ep-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nf-footer { padding: 24px 16px 32px; }
+  .nf-toast-container { bottom: calc(var(--mf-tab-height) + 12px); left: 16px; right: 16px; width: auto; max-width: none; }
+  .nf-toast { font-size: 12px; }
+}
+@media (max-width: 350px) {
+  .nf-search-grid, .nf-modal .nf-search-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nf-card { flex-basis: 104px; width: 104px; }
+  .nf-billboard { min-height: 392px; }
+}
+@media (hover: none) and (prefers-reduced-motion: no-preference) {
+  .nf-card:active { transform: scale(.975); transition: transform .12s; }
+}

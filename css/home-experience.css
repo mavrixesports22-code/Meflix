@@ -1,0 +1,97 @@
+/* Discovery and personal watch space. */
+[hidden] { display: none !important; }
+.mf-feature-info { position: absolute; z-index: 8; top: calc(var(--nf-header) + 16px); right: var(--nf-gutter); display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #ffffff55; border-radius: 50%; background: #1118; color: #fff; backdrop-filter: blur(10px); }
+.mf-feature-info svg, .mf-minimize-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.nf-billboard-content { padding-bottom: 104px; }
+.nf-billboard-title { font-size: clamp(36px, 4.1vw, 66px); line-height: 1.05; text-wrap: balance; letter-spacing: -1.7px; }
+.nf-billboard-synopsis { max-width: 540px; color: #e0dfe3; }
+.nf-billboard-overlay { background: linear-gradient(90deg, #101012ef, #10101275 45%, #1010120a 80%), linear-gradient(0deg, #101012, transparent 60%); }
+.mf-watch-home { display: flex; flex-direction: column; gap: 26px; padding: 0 var(--nf-gutter) 36px; position: relative; z-index: 2; }
+.mf-watch-home:not([hidden]) + .mf-history-page + .nf-main-content { margin-top: 0; }
+.mf-watch-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.mf-watch-heading h2 { font-size: clamp(19px, 2vw, 24px); font-weight: 700; letter-spacing: -.5px; }
+.mf-watch-heading button, .mf-watch-start > button { min-height: 40px; padding: 8px 0; color: #b7b6bf; background: none; border: 0; font-size: 12px; white-space: nowrap; }
+.mf-watch-heading button:hover, .mf-watch-start > button:hover { color: #fff; }
+.mf-watch-track { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: #444 transparent; padding: 2px 2px 12px; }
+.mf-watch-card { flex: 0 0 clamp(240px, 23vw, 330px); min-width: 0; scroll-snap-align: start; border-radius: 9px; background: #1b1b20; overflow: hidden; }
+.mf-watch-art { display: block; position: relative; width: 100%; aspect-ratio: 16/9; padding: 0; border: 0; background: #25252b; overflow: hidden; }
+.mf-watch-art img { width: 100%; height: 100%; object-fit: cover; }
+.mf-watch-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 25%, #0006); }
+.mf-watch-play { position: absolute; z-index: 1; left: 14px; bottom: 14px; width: 36px; height: 36px; border: 1px solid #fffb; border-radius: 50%; display: grid; place-items: center; color: white; background: #0008; font-size: 13px; padding-left: 2px; }
+.mf-watch-art:hover .mf-watch-play { background: #e50914; border-color: #e50914; }
+.mf-watch-progress { position: absolute; z-index: 2; bottom: 0; left: 0; right: 0; height: 3px; background: #ffffff55; }
+.mf-watch-progress > span { display: block; height: 100%; background: #e50914; }
+.mf-watch-caption { display: flex; align-items: center; gap: 8px; padding: 12px 8px 12px 14px; }
+.mf-watch-caption > div { min-width: 0; flex: 1; }
+.mf-watch-caption h3 { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.mf-watch-caption p { color: #96959e; font-size: 11px; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-watch-caption > button, .mf-history-entry > button:last-child { background: transparent; color: #bbb9c3; border: 0; font-size: 24px; flex-shrink: 0; width: 36px; height: 40px; border-radius: 50%; }
+.mf-watch-caption > button:hover, .mf-history-entry > button:last-child:hover { color: #fff; background: #ffffff10; }
+.mf-history-page { min-height: 75vh; padding: calc(var(--nf-header) + 42px) var(--nf-gutter) 60px; max-width: 1100px; margin: 0 auto; }
+.mf-history-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
+.mf-history-header h1 { font-size: clamp(30px, 4vw, 46px); margin: 8px 0 12px; font-family: 'Outfit', var(--nf-font); letter-spacing: -1px; }
+.mf-history-header p:last-child { font-size: 12px; color: #a2a0aa; }
+#clear-watch-history { border: 1px solid #ffffff35; border-radius: 6px; padding: 11px 16px; min-height: 44px; color: #ddd; background: transparent; font-size: 12px; white-space: nowrap; }
+.mf-history-entry { display: flex; gap: 20px; align-items: center; border-bottom: 1px solid #ffffff12; padding: 18px 0; }
+.mf-history-thumb { position: relative; flex: 0 0 180px; aspect-ratio: 16/9; border: 0; border-radius: 6px; overflow: hidden; padding: 0; background: #222; }
+.mf-history-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mf-history-thumb span { position: absolute; inset: 0; display: grid; place-items: center; background: #0005; color: #fff; font-size: 20px; }
+.mf-history-entry > div { flex: 1; min-width: 0; }
+.mf-history-entry h2 { font-size: 17px; margin-bottom: 7px; }
+.mf-history-entry p { font-size: 12px; color: #aaa6b2; margin-bottom: 7px; line-height: 1.5; }
+.mf-history-entry small { font-size: 11px; color: #7f7b89; }
+.mf-history-empty { text-align: center; padding: 55px 20px; }
+.mf-history-empty > span { display: block; color: #a18d97; font-size: 55px; margin-bottom: 18px; }
+.mf-history-empty h2 { font-size: 23px; }
+.mf-history-empty p { font-size: 13px; color: #aaa; margin: 15px 0 24px; }
+.mf-history-empty button { margin: auto; }
+.mf-minimize-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 8px 12px; border: 1px solid #ffffff25; border-radius: 22px; background: #0005; color: #fff; font-size: 11px; pointer-events: auto; }
+.mf-mini-controls { display: none; }
+.nf-player-overlay.minimized { position: fixed; inset: auto var(--nf-gutter) 24px auto; width: min(340px, calc(100vw - 32px)); height: 228px; max-width: none; z-index: 1500; border-radius: 12px; border: 1px solid #ffffff30; box-shadow: 0 16px 70px #000a; background: #080808; }
+.nf-player-overlay.minimized .nf-player-video { height: calc(100% - 40px); object-fit: contain !important; }
+.nf-player-overlay.minimized .nf-player-hud, .nf-player-overlay.minimized .nf-playback-controls { display: none !important; }
+.nf-player-overlay.minimized .mf-mini-controls { display: flex; position: absolute; inset: auto 0 0; height: 40px; align-items: stretch; background: #202024; }
+.mf-mini-controls > button { color: #fff; background: transparent; border: 0; padding: 8px 12px; }
+#player-mini-restore { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; text-align: left; }
+#player-mini-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+#player-mini-restore > span:last-child { font-size: 10px; color: #a9a6b2; white-space: nowrap; }
+#player-mini-close { font-size: 24px; width: 40px; padding: 0; }
+#player-mini-toggle { width: 32px; padding: 0; font-size: 13px; }
+.nf-player-overlay.minimized #player-status { inset: 8px 12px 45px; font-size: 11px; }
+@media (max-width: 700px) {
+  .nf-billboard { margin-bottom: 22px; height: min(124vw, 520px); border-color: #ffffff30; }
+  .nf-billboard-content { padding: 26px 16px 14px; gap: 9px; }
+  .nf-billboard-title { font-size: clamp(25px, 7.1vw, 36px); line-height: 1.07; letter-spacing: -.7px; -webkit-line-clamp: 3; }
+  .nf-billboard-overlay { background: linear-gradient(0deg, #161217 0%, #161217e8 14%, #161217a8 36%, transparent 72%); }
+  .nf-billboard-badge { font-size: 8px; color: #e8dbe0; letter-spacing: 1.7px; }
+  .mf-feature-info { top: 12px; right: 12px; width: 36px; height: 36px; background: #0007; }
+  .mf-watch-home { padding-bottom: 24px; gap: 22px; }
+  .mf-watch-heading { margin-bottom: 8px; gap: 12px; }
+  .mf-watch-heading h2 { font-size: 18px; }
+  .mf-watch-heading button { font-size: 10px; }
+  .mf-watch-track { gap: 10px; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
+  .mf-watch-card { flex-basis: 230px; border-radius: 6px; }
+  .mf-watch-caption { padding: 10px 4px 10px 10px; }
+  .mf-watch-caption h3 { font-size: 12px; }
+  .mf-watch-caption p { font-size: 10px; }
+  .mf-history-page { padding-top: calc(var(--nf-header) + 20px); padding-bottom: 30px; }
+  .mf-history-header { align-items: flex-start; gap: 10px; }
+  .mf-history-header h1 { font-size: 30px; }
+  #clear-watch-history { font-size: 10px; padding: 10px; }
+  .mf-history-entry { gap: 12px; padding: 14px 0; }
+  .mf-history-thumb { flex-basis: 104px; }
+  .mf-history-entry h2 { font-size: 13px; }
+  .mf-history-entry p { font-size: 10px; }
+  .mf-history-entry small { font-size: 9px; }
+  .mf-history-entry > button:last-child { width: 28px; }
+  .mf-minimize-button { padding: 8px; }
+  .mf-minimize-button > span { display: none; }
+  body:has(.nf-player-overlay.minimized.active) { padding-bottom: calc(var(--mf-tab-height) + 112px); }
+  .nf-player-overlay.minimized { width: calc(100% - 24px); height: 88px; right: 12px; bottom: calc(var(--mf-tab-height) + 12px); border-radius: 9px; }
+  .nf-player-overlay.minimized .nf-player-video { width: 120px; height: 100%; right: auto; }
+  .nf-player-overlay.minimized .mf-mini-controls { inset: 0 0 0 120px; height: auto; align-items: stretch; }
+  .nf-player-overlay.minimized #player-mini-restore { flex-direction: column; align-items: flex-start; justify-content: center; gap: 7px; padding: 8px; }
+  .nf-player-overlay.minimized #player-mini-title { flex: 0 1 auto; width: 100%; }
+  .nf-player-overlay.minimized #player-mini-close { width: 32px; }
+  .nf-player-overlay.minimized .nf-player-video::cue { font-size: 10px; }
+}

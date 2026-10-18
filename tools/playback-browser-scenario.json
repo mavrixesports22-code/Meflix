@@ -1,0 +1,21 @@
+{
+  "browser": { "mode": "launch", "executable_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "headless": true },
+  "start_url": { "url": "http://localhost:5173/netflix/" },
+  "storage": { "cookies": [{ "name": "netmirror_session", "value": { "source": "secret", "secret_id": "qa_session" }, "destination": { "url": "http://localhost:5173" }, "http_only": true, "secure": false, "same_site": "Strict" }] },
+  "secrets": [{ "secret_id": "qa_session", "environment_variable": "NETMIRROR_QA_SESSION" }],
+  "actions": [
+    { "step_id": "search", "action": "click", "locator": { "kind": "css", "selector": "#search-toggle-btn" }, "timeout_ms": 5000 },
+    { "step_id": "query", "action": "fill", "locator": { "kind": "css", "selector": "#search-input" }, "value": { "source": "literal", "value": "Stranger Things" }, "timeout_ms": 5000 },
+    { "step_id": "submit", "action": "press", "locator": { "kind": "css", "selector": "#search-input" }, "key": "Enter", "timeout_ms": 5000 },
+    { "step_id": "result", "action": "wait_for", "locator": { "kind": "css", "selector": "#search-grid .nf-card[data-id=\"nm-80057281\"]" }, "state": "visible", "timeout_ms": 20000 },
+    { "step_id": "details", "action": "click", "locator": { "kind": "css", "selector": "#search-grid .nf-card[data-id=\"nm-80057281\"]" }, "timeout_ms": 10000 },
+    { "step_id": "play", "action": "click", "locator": { "kind": "css", "selector": "#modal-play-btn" }, "timeout_ms": 10000 },
+    { "step_id": "source-ready", "action": "wait_for", "locator": { "kind": "css", "selector": "#player-controls" }, "state": "visible", "timeout_ms": 25000 },
+    { "step_id": "playing", "action": "wait_for", "locator": { "kind": "css", "selector": "#player-play-pause-btn[aria-label=\"Pause video\"]" }, "state": "visible", "timeout_ms": 30000 },
+    { "step_id": "sustained-playback", "action": "wait_for_timeout", "duration_ms": 25000 },
+    { "step_id": "seek-forward", "action": "press", "locator": { "kind": "css", "selector": "#player-video" }, "key": "ArrowRight", "timeout_ms": 5000 },
+    { "step_id": "after-seek", "action": "wait_for_timeout", "duration_ms": 5000 },
+    { "step_id": "pause", "action": "press", "locator": { "kind": "css", "selector": "#player-video" }, "key": "Space", "timeout_ms": 5000 }
+  ],
+  "capture": { "at_end": ["accessibility"], "events": ["page-errors", "console"] }
+}
