@@ -179,7 +179,12 @@ class NetflixApp {
   }
 
   showCategoryView(cat, userNavigation = true) {
-    if (userNavigation) { this.browseInteracted = true; this.browseRevision = (this.browseRevision || 0) + 1; }
+    if (userNavigation) {
+      this.browseInteracted = true;
+      this.browseRevision = (this.browseRevision || 0) + 1;
+      // Returning to Home from a lower shelf must reveal the hero from its top.
+      window.scrollTo?.(0, 0);
+    }
     this.closeBrowseMenu();
     if (this.modalBackdrop?.classList.contains('open')) this.closeDetailModal();
     this.currentView = cat;
