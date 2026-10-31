@@ -814,7 +814,8 @@ var LockIcon = ({ size = 15, color = "#FFFFFF" }) => /* @__PURE__ */ _n.createEl
 var ShieldIcon = ({ size = 16, color = "#E50914" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }, /* @__PURE__ */ _n.createElement("path", { d: "M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" }), /* @__PURE__ */ _n.createElement("path", { d: "M9 12l2 2 4-4" }));
 var DeviceIcon = ({ size = 16, color = "#CCCCCC" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }, /* @__PURE__ */ _n.createElement("rect", { x: "5", y: "2", width: "14", height: "20", rx: "3" }), /* @__PURE__ */ _n.createElement("path", { d: "M11 18h2", strokeWidth: "2" }));
 var TvIcon = ({ size = 16, color = "#CCCCCC" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }, /* @__PURE__ */ _n.createElement("rect", { x: "2", y: "5", width: "20", height: "14", rx: "2" }), /* @__PURE__ */ _n.createElement("path", { d: "M12 19v3M8 22h8" }));
-var MobileIcon = ({ size = 16, color = "#CCCCCC" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }, /* @__PURE__ */ _n.createElement("rect", { x: "6", y: "2", width: "12", height: "20", rx: "2.5" }), /* @__PURE__ */ _n.createElement("path", { d: "M12 18h.01", strokeWidth: "2" }));
+var AndroidIcon = ({ size = 16, color = "#10B981" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: color }, /* @__PURE__ */ _n.createElement("path", { d: "M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.72 2.24 12.88 2 12 2c-.88 0-1.72.24-2.64.63L7.88.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.3 1.3C6.67 3.33 5.34 5.25 5.06 7.5h13.88c-.28-2.25-1.61-4.17-3.41-5.34zM9 5.5c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75zm6 0c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z" }));
+var AppleIcon = ({ size = 16, color = "#E0E0E6" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: color }, /* @__PURE__ */ _n.createElement("path", { d: "M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.58-.7.97-1.68.86-2.66-.84.03-1.85.56-2.44 1.25-.52.59-.97 1.55-.85 2.48.93.07 1.86-.49 2.43-1.07z" }));
 var ExportIcon = ({ size = 14, color = "#CCCCCC" }) => /* @__PURE__ */ _n.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }, /* @__PURE__ */ _n.createElement("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" }));
 
 // src/components/LockScreen.jsx
@@ -1201,7 +1202,7 @@ var StatsRow = ({ devices, whitelistedIps, currentTab, onSelectTab, isStreaming:
     "div",
     {
       key: k4.id,
-      className: `stat-card ${currentTab === k4.id ? "active" : ""}`,
+      className: `stat-card stat-card-${k4.id} ${currentTab === k4.id ? "active" : ""}`,
       role: "button",
       tabIndex: 0,
       onClick: () => onSelectTab(k4.id),
@@ -1334,6 +1335,58 @@ var NavTabs = ({
 };
 
 // src/components/DeviceCard.jsx
+function formatAgo(timestamp, now = Date.now()) {
+  if (!timestamp) return "Never";
+  const diffSec = Math.max(0, Math.floor((now - timestamp) / 1e3));
+  if (diffSec < 60) return "Just now";
+  const mins = Math.floor(diffSec / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(diffSec / 3600);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(diffSec / 86400);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+function getDevicePresence(device, now = Date.now()) {
+  const isStreaming2 = Boolean(device.isWatching && device.lastActiveAt && now - device.lastActiveAt < 3e5);
+  if (isStreaming2) {
+    return {
+      type: "streaming",
+      label: "STREAMING NOW",
+      dotClass: "green-dot-pulse",
+      pillClass: "pill-streaming",
+      color: "#10B981"
+    };
+  }
+  const lastActive = device.lastActiveAt || device.requestedAt;
+  const diff = lastActive ? now - lastActive : Infinity;
+  if (diff < 6e5) {
+    return {
+      type: "online",
+      label: "ONLINE",
+      dotClass: "green-dot",
+      pillClass: "pill-online",
+      color: "#10B981"
+    };
+  }
+  if (diff < 864e5) {
+    return {
+      type: "idle",
+      label: "IDLE",
+      dotClass: "amber-dot",
+      pillClass: "pill-idle",
+      color: "#F59E0B"
+    };
+  }
+  return {
+    type: "offline",
+    label: "OFFLINE",
+    dotClass: "gray-dot",
+    pillClass: "pill-offline",
+    color: "#64748B"
+  };
+}
 var DeviceCard = ({
   device,
   isStreaming: isStreaming2,
@@ -1347,14 +1400,27 @@ var DeviceCard = ({
 }) => {
   const watching = isStreaming2(device);
   const exp = expirationDetails;
-  const historyCount = device.watchCount || (Array.isArray(device.watchHistory) ? device.watchHistory.length : 0);
-  const renderPlatformIcon = () => {
+  const historyList = Array.isArray(device.watchHistory) ? device.watchHistory : [];
+  const historyCount = device.watchCount || historyList.length;
+  const latestWatched = historyList.length > 0 ? historyList[historyList.length - 1] : null;
+  const presence = getDevicePresence(device);
+  const getPlatformDetails = () => {
     const p3 = (device.platform || "").toLowerCase();
-    if (p3.includes("tv") || p3.includes("fire")) return /* @__PURE__ */ _n.createElement(TvIcon, { size: 16, color: "#CCCCCC" });
-    if (p3.includes("android") || p3.includes("ios") || p3.includes("iphone") || p3.includes("ipad")) return /* @__PURE__ */ _n.createElement(MobileIcon, { size: 16, color: "#CCCCCC" });
-    return /* @__PURE__ */ _n.createElement(DeviceIcon, { size: 16, color: "#CCCCCC" });
+    if (p3.includes("tv") || p3.includes("fire") || p3.includes("androidtv")) {
+      return { icon: /* @__PURE__ */ _n.createElement(TvIcon, { size: 18, color: "#FF4D58" }), glyphCls: "glyph-tv", name: device.platform || "Smart TV" };
+    }
+    if (p3.includes("apple") || p3.includes("ios") || p3.includes("iphone") || p3.includes("ipad")) {
+      return { icon: /* @__PURE__ */ _n.createElement(AppleIcon, { size: 18, color: "#E2E8F0" }), glyphCls: "glyph-apple", name: device.platform || "Apple iOS" };
+    }
+    if (p3.includes("android")) {
+      return { icon: /* @__PURE__ */ _n.createElement(AndroidIcon, { size: 18, color: "#10B981" }), glyphCls: "glyph-android", name: device.platform || "Android" };
+    }
+    return { icon: /* @__PURE__ */ _n.createElement(DeviceIcon, { size: 18, color: "#94A3B8" }), glyphCls: "glyph-device", name: device.platform || "Device" };
   };
+  const platformMeta = getPlatformDetails();
   const formattedRegDate = device.requestedAt ? new Date(device.requestedAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "Unknown";
+  const regAgo = device.requestedAt ? formatAgo(device.requestedAt) : "";
+  const activeAgo = formatAgo(device.lastActiveAt || device.requestedAt);
   return /* @__PURE__ */ _n.createElement(
     "div",
     {
@@ -1374,15 +1440,15 @@ var DeviceCard = ({
         onOpenDetails(device.deviceId);
       }
     },
-    /* @__PURE__ */ _n.createElement("div", { className: "card-header" }, /* @__PURE__ */ _n.createElement("div", { className: "card-header-main" }, /* @__PURE__ */ _n.createElement("div", { className: "device-glyph" }, renderPlatformIcon()), /* @__PURE__ */ _n.createElement("div", { className: "device-meta-col" }, /* @__PURE__ */ _n.createElement("div", { className: "name-row" }, /* @__PURE__ */ _n.createElement("strong", { className: "device-name" }, device.name || "Unnamed device")), /* @__PURE__ */ _n.createElement("div", { className: "platform-meta" }, "Platform: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, device.platform || "Device"), /* @__PURE__ */ _n.createElement("span", { className: "meta-separator" }, " "), "Registered: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, formattedRegDate)))), /* @__PURE__ */ _n.createElement("div", { className: "status-col" }, watching ? /* @__PURE__ */ _n.createElement("div", { className: "watching-now-badge" }, /* @__PURE__ */ _n.createElement("span", { className: "green-dot" }), /* @__PURE__ */ _n.createElement("span", null, "WATCHING NOW")) : /* @__PURE__ */ _n.createElement("div", { className: `status-tag ${exp.cls}`, style: { borderColor: exp.badgeColor, color: exp.badgeColor } }, exp.badge))),
-    /* @__PURE__ */ _n.createElement("div", { className: "details-grid" }, /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "IP ADDRESS"), /* @__PURE__ */ _n.createElement("span", { className: "detail-mono" }, device.ip || "Not recorded")), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "DEVICE ID"), /* @__PURE__ */ _n.createElement("span", { className: "detail-mono" }, device.deviceId)), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "LAST ACTIVE"), /* @__PURE__ */ _n.createElement("span", { className: "detail-value" }, relativeTime2(device.lastActiveAt || device.requestedAt))), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "SUBSCRIPTION VALIDITY"), /* @__PURE__ */ _n.createElement("span", { className: "detail-value", style: { color: exp.badgeColor } }, exp.detail))),
+    /* @__PURE__ */ _n.createElement("div", { className: "card-header" }, /* @__PURE__ */ _n.createElement("div", { className: "card-header-main" }, /* @__PURE__ */ _n.createElement("div", { className: `device-glyph ${platformMeta.glyphCls}` }, platformMeta.icon), /* @__PURE__ */ _n.createElement("div", { className: "device-meta-col" }, /* @__PURE__ */ _n.createElement("div", { className: "name-row" }, /* @__PURE__ */ _n.createElement("strong", { className: "device-name" }, device.name || "Unnamed device"), /* @__PURE__ */ _n.createElement("div", { className: `presence-pill ${presence.pillClass}` }, /* @__PURE__ */ _n.createElement("span", { className: `presence-dot ${presence.dotClass}` }), /* @__PURE__ */ _n.createElement("span", { className: "presence-label" }, presence.label))), /* @__PURE__ */ _n.createElement("div", { className: "platform-meta" }, /* @__PURE__ */ _n.createElement("span", null, "Platform: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, platformMeta.name)), /* @__PURE__ */ _n.createElement("span", { className: "meta-separator" }, "\u2022"), /* @__PURE__ */ _n.createElement("span", null, "Registered: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, formattedRegDate)), regAgo ? /* @__PURE__ */ _n.createElement("span", { className: "meta-ago" }, "(", regAgo, ")") : null))), /* @__PURE__ */ _n.createElement("div", { className: "status-col" }, watching ? /* @__PURE__ */ _n.createElement("div", { className: "watching-now-badge" }, /* @__PURE__ */ _n.createElement("span", { className: "green-dot-pulse" }), /* @__PURE__ */ _n.createElement("span", null, "WATCHING NOW")) : /* @__PURE__ */ _n.createElement("div", { className: `status-tag ${exp.cls}`, style: { borderColor: exp.badgeColor, color: exp.badgeColor } }, exp.badge))),
+    /* @__PURE__ */ _n.createElement("div", { className: "details-grid" }, /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "IP ADDRESS"), /* @__PURE__ */ _n.createElement("span", { className: "detail-mono" }, device.ip || "Not recorded")), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "DEVICE ID"), /* @__PURE__ */ _n.createElement("span", { className: "detail-mono" }, device.deviceId)), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "LAST ACTIVE"), /* @__PURE__ */ _n.createElement("span", { className: "detail-value detail-value-active" }, /* @__PURE__ */ _n.createElement("span", { className: `status-micro-dot ${presence.dotClass}` }), /* @__PURE__ */ _n.createElement("strong", { className: "ago-highlight" }, activeAgo))), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "SUBSCRIPTION VALIDITY"), /* @__PURE__ */ _n.createElement("span", { className: "detail-value", style: { color: exp.badgeColor } }, exp.detail))),
     watching && device.currentTitle ? /* @__PURE__ */ _n.createElement("div", { className: "now-watching-banner" }, /* @__PURE__ */ _n.createElement("div", { className: "now-watching-header" }, /* @__PURE__ */ _n.createElement("div", { className: "now-watching-title-wrap" }, /* @__PURE__ */ _n.createElement(PlayIcon, { size: 13, color: "#E50914" }), /* @__PURE__ */ _n.createElement("span", { className: "now-watching-title" }, device.currentTitle, device.currentEpisode ? ` - ${device.currentEpisode}` : "")), /* @__PURE__ */ _n.createElement("span", { className: "now-watching-pct" }, device.currentProgress || 0, "%")), /* @__PURE__ */ _n.createElement("div", { className: "progress-track" }, /* @__PURE__ */ _n.createElement(
       "div",
       {
         className: "progress-fill",
         style: { width: `${Math.min(100, Math.max(5, device.currentProgress || 0))}%` }
       }
-    ))) : null,
+    ))) : !watching && latestWatched && latestWatched.title ? /* @__PURE__ */ _n.createElement("div", { className: "recent-stream-bar" }, /* @__PURE__ */ _n.createElement("div", { className: "recent-stream-info" }, /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-label" }, "RECENT TITLE"), /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-title" }, latestWatched.title), latestWatched.episode ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-ep" }, latestWatched.episode) : null, latestWatched.progress ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-pct" }, "(", latestWatched.progress, "%)") : null), latestWatched.updatedAt ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-ago" }, formatAgo(latestWatched.updatedAt)) : null) : null,
     /* @__PURE__ */ _n.createElement("div", { className: "card-actions" }, /* @__PURE__ */ _n.createElement("div", { className: "action-buttons" }, /* @__PURE__ */ _n.createElement(
       "button",
       {

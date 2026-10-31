@@ -49,7 +49,7 @@ export const StatsRow = ({ devices, whitelistedIps, currentTab, onSelectTab, isS
       {kpis.map(k => (
         <div
           key={k.id}
-          className={`stat-card ${currentTab === k.id ? 'active' : ''}`}
+          className={`stat-card stat-card-${k.id} ${currentTab === k.id ? 'active' : ''}`}
           role="button"
           tabIndex={0}
           onClick={() => onSelectTab(k.id)}

@@ -1,5 +1,63 @@
 import React from 'react';
-import { DeviceIcon, TvIcon, MobileIcon, PlayIcon, CheckIcon, ClockIcon, TrashIcon } from './Icons.jsx';
+import { DeviceIcon, TvIcon, MobileIcon, PlayIcon, CheckIcon, ClockIcon, TrashIcon, AndroidIcon, AppleIcon } from './Icons.jsx';
+
+export function formatAgo(timestamp, now = Date.now()) {
+  if (!timestamp) return 'Never';
+  const diffSec = Math.max(0, Math.floor((now - timestamp) / 1000));
+  if (diffSec < 60) return 'Just now';
+  const mins = Math.floor(diffSec / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(diffSec / 3600);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(diffSec / 86400);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+export function getDevicePresence(device, now = Date.now()) {
+  const isStreaming = Boolean(device.isWatching && device.lastActiveAt && (now - device.lastActiveAt < 300000));
+  if (isStreaming) {
+    return {
+      type: 'streaming',
+      label: 'STREAMING NOW',
+      dotClass: 'green-dot-pulse',
+      pillClass: 'pill-streaming',
+      color: '#10B981'
+    };
+  }
+
+  const lastActive = device.lastActiveAt || device.requestedAt;
+  const diff = lastActive ? now - lastActive : Infinity;
+
+  if (diff < 600000) {
+    return {
+      type: 'online',
+      label: 'ONLINE',
+      dotClass: 'green-dot',
+      pillClass: 'pill-online',
+      color: '#10B981'
+    };
+  }
+
+  if (diff < 86400000) {
+    return {
+      type: 'idle',
+      label: 'IDLE',
+      dotClass: 'amber-dot',
+      pillClass: 'pill-idle',
+      color: '#F59E0B'
+    };
+  }
+
+  return {
+    type: 'offline',
+    label: 'OFFLINE',
+    dotClass: 'gray-dot',
+    pillClass: 'pill-offline',
+    color: '#64748B'
+  };
+}
 
 export const DeviceCard = ({
   device,
@@ -14,18 +72,33 @@ export const DeviceCard = ({
 }) => {
   const watching = isStreaming(device);
   const exp = expirationDetails;
-  const historyCount = device.watchCount || (Array.isArray(device.watchHistory) ? device.watchHistory.length : 0);
+  const historyList = Array.isArray(device.watchHistory) ? device.watchHistory : [];
+  const historyCount = device.watchCount || historyList.length;
+  const latestWatched = historyList.length > 0 ? historyList[historyList.length - 1] : null;
+  const presence = getDevicePresence(device);
 
-  const renderPlatformIcon = () => {
+  const getPlatformDetails = () => {
     const p = (device.platform || '').toLowerCase();
-    if (p.includes('tv') || p.includes('fire')) return <TvIcon size={16} color="#CCCCCC" />;
-    if (p.includes('android') || p.includes('ios') || p.includes('iphone') || p.includes('ipad')) return <MobileIcon size={16} color="#CCCCCC" />;
-    return <DeviceIcon size={16} color="#CCCCCC" />;
+    if (p.includes('tv') || p.includes('fire') || p.includes('androidtv')) {
+      return { icon: <TvIcon size={18} color="#FF4D58" />, glyphCls: 'glyph-tv', name: device.platform || 'Smart TV' };
+    }
+    if (p.includes('apple') || p.includes('ios') || p.includes('iphone') || p.includes('ipad')) {
+      return { icon: <AppleIcon size={18} color="#E2E8F0" />, glyphCls: 'glyph-apple', name: device.platform || 'Apple iOS' };
+    }
+    if (p.includes('android')) {
+      return { icon: <AndroidIcon size={18} color="#10B981" />, glyphCls: 'glyph-android', name: device.platform || 'Android' };
+    }
+    return { icon: <DeviceIcon size={18} color="#94A3B8" />, glyphCls: 'glyph-device', name: device.platform || 'Device' };
   };
+
+  const platformMeta = getPlatformDetails();
 
   const formattedRegDate = device.requestedAt
     ? new Date(device.requestedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
     : 'Unknown';
+
+  const regAgo = device.requestedAt ? formatAgo(device.requestedAt) : '';
+  const activeAgo = formatAgo(device.lastActiveAt || device.requestedAt);
 
   return (
     <div
@@ -48,17 +121,22 @@ export const DeviceCard = ({
       {/* Top Header */}
       <div className="card-header">
         <div className="card-header-main">
-          <div className="device-glyph">
-            {renderPlatformIcon()}
+          <div className={`device-glyph ${platformMeta.glyphCls}`}>
+            {platformMeta.icon}
           </div>
           <div className="device-meta-col">
             <div className="name-row">
               <strong className="device-name">{device.name || 'Unnamed device'}</strong>
+              <div className={`presence-pill ${presence.pillClass}`}>
+                <span className={`presence-dot ${presence.dotClass}`} />
+                <span className="presence-label">{presence.label}</span>
+              </div>
             </div>
             <div className="platform-meta">
-              Platform: <strong className="white-text">{device.platform || 'Device'}</strong>
-              <span className="meta-separator"> </span>
-              Registered: <strong className="white-text">{formattedRegDate}</strong>
+              <span>Platform: <strong className="white-text">{platformMeta.name}</strong></span>
+              <span className="meta-separator">•</span>
+              <span>Registered: <strong className="white-text">{formattedRegDate}</strong></span>
+              {regAgo ? <span className="meta-ago">({regAgo})</span> : null}
             </div>
           </div>
         </div>
@@ -66,7 +144,7 @@ export const DeviceCard = ({
         <div className="status-col">
           {watching ? (
             <div className="watching-now-badge">
-              <span className="green-dot" />
+              <span className="green-dot-pulse" />
               <span>WATCHING NOW</span>
             </div>
           ) : (
@@ -89,7 +167,10 @@ export const DeviceCard = ({
         </div>
         <div className="detail-block">
           <span className="detail-label">LAST ACTIVE</span>
-          <span className="detail-value">{relativeTime(device.lastActiveAt || device.requestedAt)}</span>
+          <span className="detail-value detail-value-active">
+            <span className={`status-micro-dot ${presence.dotClass}`} />
+            <strong className="ago-highlight">{activeAgo}</strong>
+          </span>
         </div>
         <div className="detail-block">
           <span className="detail-label">SUBSCRIPTION VALIDITY</span>
@@ -99,7 +180,7 @@ export const DeviceCard = ({
         </div>
       </div>
 
-      {/* Currently Watching Banner */}
+      {/* Currently Watching Live Stream Banner */}
       {watching && device.currentTitle ? (
         <div className="now-watching-banner">
           <div className="now-watching-header">
@@ -118,6 +199,18 @@ export const DeviceCard = ({
               style={{ width: `${Math.min(100, Math.max(5, device.currentProgress || 0))}%` }}
             />
           </div>
+        </div>
+      ) : (!watching && latestWatched && latestWatched.title) ? (
+        <div className="recent-stream-bar">
+          <div className="recent-stream-info">
+            <span className="recent-stream-label">RECENT TITLE</span>
+            <span className="recent-stream-title">{latestWatched.title}</span>
+            {latestWatched.episode ? <span className="recent-stream-ep">{latestWatched.episode}</span> : null}
+            {latestWatched.progress ? <span className="recent-stream-pct">({latestWatched.progress}%)</span> : null}
+          </div>
+          {latestWatched.updatedAt ? (
+            <span className="recent-stream-ago">{formatAgo(latestWatched.updatedAt)}</span>
+          ) : null}
         </div>
       ) : null}
 
