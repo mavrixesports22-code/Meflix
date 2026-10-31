@@ -89,7 +89,7 @@ async function api(action,body) {
   try {
     const token=action==='login'?null:await auth.currentUser?.getIdToken();
     const response=await fetch(`/api/admin/${action}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:controller.signal});
-    const data=await response.json();if(!response.ok)throw Error(data.error||'Console request failed.');return data;
+    let data;if(typeof response.text==='function'){const text=await response.text();try{data=JSON.parse(text);}catch{const clean=text.replace(/<[^>]*>/g,'').trim();throw Error(response.ok?'Unexpected server response.':clean?('Server error ('+response.status+'): '+clean.slice(0,100)):('Server request failed with status '+response.status));}}else{data=await response.json();}if(!response.ok)throw Error(data.error||'Console request failed.');return data;
   }finally{clearTimeout(timer);}
 }
 $('login-form').addEventListener('submit',async event=>{
