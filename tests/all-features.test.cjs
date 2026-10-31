@@ -195,6 +195,7 @@ test('all admin features working: history, online active users, KPI stats, appro
 
   // 8. Verify Search Filtering
   document.getElementById('tab-all').click();
+  for (let i = 0; i < 10; i++) await Promise.resolve();
   document.getElementById('search').value = 'Dhyan';
   document.getElementById('search').dispatchEvent(new dom.window.Event('input'));
   assert.equal(document.querySelectorAll('.device-card').length, 1);
