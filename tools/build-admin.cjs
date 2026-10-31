@@ -26,13 +26,17 @@ async function build() {
     banner: {
       js: 'if(typeof queueMicrotask==="undefined"){const qm=(fn)=>Promise.resolve().then(fn);try{window.queueMicrotask=qm;}catch{}try{globalThis.queueMicrotask=qm;}catch{}}'
     },
-    minify: false,
+    minify: true,
+    treeShaking: true,
+    legalComments: 'eof',
   });
 
   fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
   for (const name of ['index.html', 'admin.css', 'admin.js', 'model.js', 'firebase-config.js']) {
     fs.copyFileSync(path.join(root, 'public', name), path.join(root, 'dist', name));
   }
+  const css=await esbuild.transform(fs.readFileSync(path.join(root,'public','admin.css'),'utf8'),{loader:'css',minify:true});
+  fs.writeFileSync(path.join(root,'dist','admin.css'),css.code);
   console.log('Admin React assets built successfully in public/ and dist/');
 }
 

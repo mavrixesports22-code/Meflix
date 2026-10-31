@@ -7,35 +7,12 @@ export const NavTabs = ({
   totalCount,
   streamingCount,
   pendingCount,
-  whitelistCount,
+  approvedCount,
   searchQuery,
   onSearchChange,
   isDeviceView
 }) => {
-  const handleTabClick = (tabId) => {
-    onSelectTab(tabId);
-    const viewDevices = document.getElementById('view-devices');
-    const viewWhitelist = document.getElementById('view-whitelist');
-    const viewPin = document.getElementById('view-pin');
-    const searchBox = document.getElementById('search-box');
-
-    if (tabId === 'all' || tabId === 'watching' || tabId === 'pending') {
-      if (viewDevices) viewDevices.hidden = false;
-      if (viewWhitelist) viewWhitelist.hidden = true;
-      if (viewPin) viewPin.hidden = true;
-      if (searchBox) searchBox.hidden = false;
-    } else if (tabId === 'whitelist') {
-      if (viewDevices) viewDevices.hidden = true;
-      if (viewWhitelist) viewWhitelist.hidden = false;
-      if (viewPin) viewPin.hidden = true;
-      if (searchBox) searchBox.hidden = true;
-    } else if (tabId === 'pin') {
-      if (viewDevices) viewDevices.hidden = true;
-      if (viewWhitelist) viewWhitelist.hidden = true;
-      if (viewPin) viewPin.hidden = false;
-      if (searchBox) searchBox.hidden = true;
-    }
-  };
+  const handleTabClick = onSelectTab;
 
   return (
     <div className="menu-row">
@@ -71,12 +48,12 @@ export const NavTabs = ({
         </button>
 
         <button
-          id="tab-whitelist"
+          id="tab-approved"
           type="button"
-          className={`tab-btn ${currentTab === 'whitelist' ? 'active' : ''}`}
-          onClick={() => handleTabClick('whitelist')}
+          className={`tab-btn ${currentTab === 'approved' ? 'active' : ''}`}
+          onClick={() => handleTabClick('approved')}
         >
-          IP Whitelist ({whitelistCount})
+          Approved ({approvedCount})
         </button>
 
         <button
@@ -93,19 +70,10 @@ export const NavTabs = ({
         <SearchIcon size={14} color="#777777" />
         <input
           id="search"
-          ref={(el) => {
-            if (el && !el._hasInputListener) {
-              el._hasInputListener = true;
-              el.addEventListener('input', (e) => {
-                onSearchChange(e.target ? e.target.value : el.value);
-              });
-            }
-          }}
           type="search"
           value={searchQuery}
           onInput={(e) => onSearchChange(e.target.value || document.getElementById('search')?.value || '')}
-          onChange={(e) => onSearchChange(e.target.value || document.getElementById('search')?.value || '')}
-          placeholder="Search name, IP, title, ID..."
+          placeholder="Search name, title, device ID…"
           className="compact-search-input"
           aria-label="Search devices"
         />

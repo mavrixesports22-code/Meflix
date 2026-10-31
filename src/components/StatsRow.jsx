@@ -1,9 +1,9 @@
 import React from 'react';
 
-export const StatsRow = ({ devices, whitelistedIps, currentTab, onSelectTab, isStreaming }) => {
+export const StatsRow = ({ devices, currentTab, onSelectTab, isStreaming }) => {
   const streamingCount = devices.filter(isStreaming).length;
   const pendingCount = devices.filter(d => d.status === 'pending').length;
-  const ipsCount = whitelistedIps.length;
+  const approvedCount = devices.filter(d => d.status === 'approved').length;
 
   const kpis = [
     {
@@ -34,11 +34,11 @@ export const StatsRow = ({ devices, whitelistedIps, currentTab, onSelectTab, isS
       hasDot: false
     },
     {
-      id: 'whitelist',
-      countId: 'count-whitelist',
-      label: 'IP WHITELIST',
-      num: ipsCount,
-      sub: 'Network passes',
+      id: 'approved',
+      countId: 'count-approved',
+      label: 'APPROVED DEVICES',
+      num: approvedCount,
+      sub: 'Device-bound access',
       color: '#FFFFFF',
       hasDot: false
     }

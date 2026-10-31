@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldIcon, RefreshIcon, LockIcon, ExportIcon } from './Icons.jsx';
 
-export const TopBar = ({ streamingCount, onRefresh, onLock, onExport }) => {
+export const TopBar = ({ streamingCount, onRefresh, onLock, onExport, onShowReleases }) => {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -24,6 +24,7 @@ export const TopBar = ({ streamingCount, onRefresh, onLock, onExport }) => {
       </div>
 
       <div className="topbar-right">
+        <button id="updates-nav" type="button" className="top-btn" onClick={onShowReleases}>App releases</button>
         <button
           id="export"
           type="button"
@@ -58,68 +59,6 @@ export const TopBar = ({ streamingCount, onRefresh, onLock, onExport }) => {
         </button>
       </div>
 
-      {/* Hidden test compatibility triggers */}
-      <div style={{ display: 'none' }}>
-        <button
-          id="security-top"
-          type="button"
-          ref={(btn) => {
-            if (btn && !btn._hasNativeClick) {
-              btn._hasNativeClick = true;
-              btn.addEventListener('click', () => {
-                const b = document.getElementById('tab-pin');
-                if (b) b.click();
-              });
-            }
-          }}
-          onClick={() => { const btn = document.getElementById('tab-pin'); if (btn) btn.click(); }}
-        />
-        <button
-          id="security-nav"
-          type="button"
-          ref={(btn) => {
-            if (btn && !btn._hasNativeClick) {
-              btn._hasNativeClick = true;
-              btn.addEventListener('click', () => {
-                const b = document.getElementById('tab-pin');
-                if (b) b.click();
-              });
-            }
-          }}
-          onClick={() => { const btn = document.getElementById('tab-pin'); if (btn) btn.click(); }}
-        />
-        <button
-          id="devices-nav"
-          type="button"
-          ref={(btn) => {
-            if (btn && !btn._hasNativeClick) {
-              btn._hasNativeClick = true;
-              btn.addEventListener('click', () => {
-                const b = document.getElementById('tab-all');
-                if (b) b.click();
-              });
-            }
-          }}
-          onClick={() => { const btn = document.getElementById('tab-all'); if (btn) btn.click(); }}
-        />
-        <button
-          id="updates-nav"
-          type="button"
-          ref={(btn) => {
-            if (btn && !btn._hasNativeClick) {
-              btn._hasNativeClick = true;
-              btn.addEventListener('click', () => {
-                const u = document.getElementById('updates');
-                if (u) { if (typeof u.showModal === 'function') u.showModal(); u.open = true; }
-              });
-            }
-          }}
-          onClick={() => {
-            const u = document.getElementById('updates');
-            if (u) { if (typeof u.showModal === 'function') u.showModal(); u.open = true; }
-          }}
-        />
-      </div>
     </header>
   );
 };

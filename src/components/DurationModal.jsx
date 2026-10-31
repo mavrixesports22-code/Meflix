@@ -12,8 +12,8 @@ export const DURATION_PRESETS = [
 
 export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approvalPatch }) => {
   const dialogRef = useRef(null);
-  const [selectedPreset, setSelectedPreset] = useState('30d');
-  const [accessMode, setAccessMode] = useState('scheduled');
+  const [selectedPreset, setSelectedPreset] = useState('perm');
+  const [accessMode, setAccessMode] = useState('permanent');
   const [customDays, setCustomDays] = useState('30');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -39,7 +39,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
       if (noteEl) noteEl.value = device.note || '';
 
       const modeEl = document.getElementById('access-mode');
-      if (!device.expiresAt && device.status === 'approved') {
+      if (!device.expiresAt) {
         setSelectedPreset('perm');
         setAccessMode('permanent');
         if (modeEl) modeEl.value = 'permanent';
@@ -91,7 +91,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
   };
 
   const handleSave = async () => {
-    const currentDev = device || (typeof window !== 'undefined' ? window._activeDevice : null);
+    const currentDev = device;
     if (!currentDev) return;
     setBusy(true);
     setError('');
@@ -205,7 +205,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
                 type="button"
                 className="btn-secondary"
                 onClick={async () => {
-                  const currentDev = device || (typeof window !== 'undefined' ? window._activeDevice : null);
+                  const currentDev = device;
                   const noteVal = (document.getElementById('device-note')?.value !== undefined ? document.getElementById('device-note').value : note) || '';
                   if (currentDev && onSaveNote) {
                     await onSaveNote(currentDev.deviceId, noteVal);

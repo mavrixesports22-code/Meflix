@@ -38,6 +38,10 @@ The old in-app/TV admin screen and local PIN self-approval path have been remove
 
 ## Verification
 
+The keypad renders before Firebase SDK downloads finish. SDK loading is shared and retryable, and Firestore listeners start only after a server-verified admin session. Production JavaScript and CSS are minified. Browser storage flags and preview URL parameters cannot unlock the dashboard, and IP whitelists no longer grant access.
+
+For production rollout, confirm the hosting credentials, deploy the ownership rules together with the updated native app, approve its migrated identity once, and smoke-test the real hosted console and TV. Local tests do not establish production hosting configuration or on-device frame rate.
+
 `npm test` runs PIN/server/model/DOM interaction tests; the rule test skips when emulators are absent. Run all tests, including real Firestore authorization rules, with:
 
 ```

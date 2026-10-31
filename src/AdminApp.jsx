@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { adminApi, verifyAdminSession } from './adminApi.js';
 import { LockScreen } from './components/LockScreen.jsx';
 import { TopBar } from './components/TopBar.jsx';
 import { StatsRow } from './components/StatsRow.jsx';
@@ -6,12 +7,12 @@ import { NavTabs } from './components/NavTabs.jsx';
 import { DeviceCard } from './components/DeviceCard.jsx';
 import { DurationModal } from './components/DurationModal.jsx';
 import { HistoryModal } from './components/HistoryModal.jsx';
-import { WhitelistTab } from './components/WhitelistTab.jsx';
 import { SecurityPinTab } from './components/SecurityPinTab.jsx';
+import { ReleaseModal } from './components/ReleaseModal.jsx';
 import { ConfirmModal } from './components/ConfirmModal.jsx';
-import { statusOf, filteredDevices, approvalPatch, relativeTime, csvCell } from '../public/model.js';
+import { filteredDevices, approvalPatch, relativeTime, csvCell } from '../public/model.js';
 
-export const isStreaming = (d) => Boolean(d.isWatching && d.lastActiveAt && (Date.now() - d.lastActiveAt < 300000));
+export const isStreaming = (d) => Boolean(d.status==='approved' && (!d.expiresAt||d.expiresAt>Date.now()) && d.isWatching && d.lastActiveAt && (Date.now() - d.lastActiveAt < 300000));
 
 export function getFullExpirationDetails(d, now = Date.now()) {
   if (d.status === 'pending') {
@@ -36,19 +37,27 @@ export function getFullExpirationDetails(d, now = Date.now()) {
   return { badge: `Active (${remainingText})`, cls: 'approved', badgeColor: '#46D369', detail: `Valid until ${formattedEnd}` };
 }
 
-export function AdminApp({
-  firebase: { app, auth, db, doc, getDocFromServer, collection, onSnapshot, updateDoc, setDoc, deleteDoc, signInWithCustomToken }
-}) {
-  const [authorized, setAuthorized] = useState(() => {
-    try {
-      if (typeof window !== 'undefined' && window.location.search.includes('preview=1')) return true;
-      return sessionStorage.getItem('meflix_admin_auth') === 'true';
-    } catch {
-      return false;
-    }
-  });
+export function AdminApp({firebase: providedFirebase, loadFirebase}) {
+  const [client,setClient]=useState(providedFirebase || null);
+  const {auth,db,doc,getDocFromServer,collection,onSnapshot,updateDoc,setDoc,deleteDoc,onAuthStateChanged,signOut}=client || {};
+  const ensureClient=useCallback(async()=>{
+    if(client)return client;
+    const ready=await loadFirebase();setClient(ready);return ready;
+  },[client,loadFirebase]);
+  useEffect(()=>{
+    if(providedFirebase || !loadFirebase)return;
+    let active=true;
+    void loadFirebase().then(ready=>{if(active)setClient(ready);}).catch(()=>{});
+    return()=>{active=false;};
+  },[providedFirebase,loadFirebase]);
+  const [authorized, setAuthorized] = useState(false);
+  const [clock,setClock]=useState(Date.now());
+  const [refreshAttempt,setRefreshAttempt]=useState(0);
+  const [releasesOpen,setReleasesOpen]=useState(false);
+  const toastTimer=useRef();
+  useEffect(()=>()=>clearTimeout(toastTimer.current),[]);
+  useEffect(()=>{if(!authorized)return;const timer=setInterval(()=>setClock(Date.now()),60000);return()=>clearInterval(timer);},[authorized]);
   const [devices, setDevices] = useState([]);
-  const [whitelistedIps, setWhitelistedIps] = useState([]);
   const [currentTab, setCurrentTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
@@ -58,69 +67,33 @@ export function AdminApp({
   const [historyTarget, setHistoryTarget] = useState(null);
   const [confirmModalData, setConfirmModalData] = useState(null);
 
-  const handleOpenHistory = useCallback((d) => {
-    setHistoryTarget(d);
-    const modal = document.getElementById('history-modal');
-    if (modal) modal.open = true;
-    const nameEl = document.getElementById('history-device-name');
-    if (nameEl) nameEl.textContent = d.name || d.deviceId;
-    const countEl = document.getElementById('history-count-text');
-    const history = Array.isArray(d.watchHistory) ? d.watchHistory : [];
-    if (countEl) countEl.textContent = `${history.length} title${history.length === 1 ? '' : 's'} recorded`;
-    const listEl = document.getElementById('history-list');
-    if (listEl && history.length > 0) {
-      listEl.innerHTML = history.map(item => `
-        <div class="history-row">
-          ${item.poster ? `<img src="${item.poster}" alt="${item.title}" class="history-thumb" />` : '<div class="history-thumb-placeholder"></div>'}
-          <div class="history-info">
-            <span class="history-title">${item.title || 'Untitled'}</span>
-            ${item.episode ? `<span class="history-ep">${item.episode}</span>` : ''}
-            <div class="history-progress-meta">
-              <span class="history-progress-pct">Progress: ${item.progress || 0}%</span>
-              <span class="history-date">${item.updatedAt ? relativeTime(item.updatedAt) : ''}</span>
-            </div>
-            <div class="progress-track"><div class="progress-fill" style="width: ${item.progress || 0}%"></div></div>
-          </div>
-        </div>
-      `).join('');
-    }
-  }, []);
-
-  const handleOpenDetails = useCallback((deviceId) => {
-    const d = devices.find(device => device.deviceId === deviceId);
-    window._activeDevice = d;
-    setDurationTarget(d);
-    const modal = document.getElementById('details');
-    if (modal) modal.open = true;
-    const nameEl = document.getElementById('detail-name');
-    if (nameEl && d) nameEl.textContent = d.name || d.deviceId;
-    const noteEl = document.getElementById('device-note');
-    if (noteEl && d) noteEl.value = d.note || '';
-    const modeEl = document.getElementById('access-mode');
-    if (modeEl && d) modeEl.value = (!d.expiresAt && d.status === 'approved') ? 'permanent' : 'permanent';
-  }, [devices]);
-
+  const closeDuration = useCallback(() => setDurationTarget(null), []);
+  const closeHistory = useCallback(() => setHistoryTarget(null), []);
+  const closeConfirm = useCallback(() => setConfirmModalData(null), []);
+  const handleOpenHistory = useCallback(d => setHistoryTarget(d), []);
+  const handleOpenDetails = useCallback(id => setDurationTarget(devices.find(d => d.deviceId === id) || null), [devices]);
   const showToast = useCallback((msg) => {
+    clearTimeout(toastTimer.current);
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    toastTimer.current=setTimeout(() => setToastMessage(null), 3000);
   }, []);
 
-  const handleUnlock = useCallback(() => {
+  const handleUnlock = useCallback(async token => {
+    const ready=await ensureClient();
+    await ready.signInWithCustomToken(ready.auth,token);
+    await verifyAdminSession(ready.auth);
+    if(ready.auth.currentUser?.uid !== 'meflix-admin-console')throw new Error('Console session changed. Enter your PIN again.');
     setAuthorized(true);
-    const ws = document.getElementById('workspace');
-    if (ws) ws.hidden = false;
-    const lk = document.getElementById('lock');
-    if (lk) lk.hidden = true;
-  }, []);
+  }, [ensureClient]);
 
   const handleLock = useCallback((msg) => {
-    try { sessionStorage.removeItem('meflix_admin_auth'); } catch {}
+    if (auth && signOut) void signOut(auth).catch(() => {});
     setAuthorized(false);
     setDevices([]);
-    setWhitelistedIps([]);
     setDurationTarget(null);
     setHistoryTarget(null);
     setConfirmModalData(null);
+    setReleasesOpen(false);
     ['details', 'history-modal', 'confirm', 'updates'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.open = false;
@@ -131,12 +104,24 @@ export function AdminApp({
     if (lk) lk.hidden = false;
     const errEl = document.getElementById('login-error');
     if (errEl && msg) errEl.textContent = msg;
-  }, []);
+  }, [auth,signOut]);
+
+  useEffect(() => {
+    if (!onAuthStateChanged || !auth) return;
+    let active=true, generation=0;
+    const unsubscribe=onAuthStateChanged(auth, async user => {
+      const attempt=++generation;
+      if (!user) { if(active)setAuthorized(false); return; }
+      try { await verifyAdminSession(auth); if(active&&attempt===generation&&auth.currentUser===user)setAuthorized(true); }
+      catch { if(active&&attempt===generation)setAuthorized(false); }
+    });
+    return () => { active=false; unsubscribe(); };
+  }, [auth,onAuthStateChanged]);
 
   // Real-time Firestore sync on mount
   useEffect(() => {
+    if (!authorized) return;
     let unsubDevices = null;
-    let unsubWhitelist = null;
 
     try {
       if (typeof onSnapshot === 'function' && typeof collection === 'function' && db) {
@@ -145,25 +130,16 @@ export function AdminApp({
             const list = snapshot.docs.map(d => ({ ...(typeof d.data === 'function' ? d.data() : d.data), deviceId: d.id }));
             setDevices(list);
           }
-        });
+        }, error => { if(error.code === 'permission-denied' || error.code === 'unauthenticated') handleLock('Enter your admin PIN again.'); });
 
-        unsubWhitelist = onSnapshot(collection(db, 'whitelisted_ips'), { includeMetadataChanges: true }, (snapshot) => {
-          if (snapshot && snapshot.docs) {
-            const list = snapshot.docs.map(d => {
-              const data = typeof d.data === 'function' ? d.data() : d.data;
-              return data?.ip || d.id.replace(/_/g, '.');
-            });
-            setWhitelistedIps(list);
-          }
-        });
+
       }
     } catch {}
 
     return () => {
       if (typeof unsubDevices === 'function') unsubDevices();
-      if (typeof unsubWhitelist === 'function') unsubWhitelist();
     };
-  }, [db]);
+  }, [authorized, db, collection, onSnapshot, handleLock, refreshAttempt]);
 
   // Quick 1-Mo Approve
   const handleQuickApprove = useCallback(async (deviceId) => {
@@ -209,75 +185,16 @@ export function AdminApp({
     if (confirmEl) confirmEl.open = true;
   }, [db, doc, deleteDoc, showToast]);
 
-  // Add IP to Whitelist
-  const handleAddWhitelistIp = async (ip) => {
-    const cleanIp = ip.trim();
-    if (!cleanIp) return;
-    const ipDocId = cleanIp.replace(/[\.\:]/g, '_');
-    await setDoc(doc(db, 'whitelisted_ips', ipDocId), {
-      ip: cleanIp,
-      addedAt: Date.now(),
-      note: 'Admin Whitelist'
-    }, { merge: true });
-    showToast(`Added ${cleanIp} to whitelist.`);
-  };
-
-  // Remove IP from Whitelist
-  const handleRemoveWhitelistIp = async (ip) => {
-    const ipDocId = ip.replace(/[\.\:]/g, '_');
-    await deleteDoc(doc(db, 'whitelisted_ips', ipDocId));
-    showToast(`Removed ${ip} from whitelist.`);
-  };
-
-  // Update Security PIN
-  const handleUpdatePin = async (currentPin, newPin, serverChanged = false) => {
-    if (!serverChanged) {
-      let currentTargetPin = '1234';
-      let pinVer = 1;
-
-      try {
-        const snap1 = await getDocFromServer(doc(db, 'app_config', 'security'));
-        if (snap1 && (typeof snap1.exists === 'function' ? snap1.exists() : snap1.exists)) {
-          const d1 = typeof snap1.data === 'function' ? snap1.data() : snap1.data;
-          currentTargetPin = String(d1.pin !== undefined ? d1.pin : (d1.password !== undefined ? d1.password : '1234')).trim();
-          pinVer = (d1.pinVersion || 1) + 1;
-        }
-      } catch {}
-
-      if (currentTargetPin === '1234') {
-        try {
-          const snap2 = await getDocFromServer(doc(db, 'admin_settings', 'security'));
-          if (snap2 && (typeof snap2.exists === 'function' ? snap2.exists() : snap2.exists)) {
-            const d2 = typeof snap2.data === 'function' ? snap2.data() : snap2.data;
-            currentTargetPin = String(d2.pin !== undefined ? d2.pin : (d2.password !== undefined ? d2.password : '1234')).trim();
-            pinVer = (d2.pinVersion || 1) + 1;
-          }
-        } catch {}
-      }
-
-      if (currentPin && currentPin !== currentTargetPin) {
-        throw new Error('Current PIN is incorrect.');
-      }
-      if (newPin.length !== 4) {
-        throw new Error('Use exactly 4 digits.');
-      }
-
-      const updateData = {
-        pin: newPin,
-        password: newPin,
-        pinVersion: pinVer,
-        changedAt: Date.now()
-      };
-
-      await Promise.allSettled([
-        setDoc(doc(db, 'admin_settings', 'security'), updateData, { merge: true }),
-        setDoc(doc(db, 'app_config', 'security'), updateData, { merge: true })
-      ]);
-    }
-
+  // PIN changes are verified by the same server that issued the admin session.
+  const handleUpdatePin = async (currentPin, newPin) => {
+    await adminApi('pin', {currentPin,newPin}, auth);
     showToast('PIN successfully changed.');
     handleLock('PIN changed. Unlock using your new PIN.');
   };
+
+  const closeReleases=useCallback(()=>setReleasesOpen(false),[]);
+  const loadRelease=useCallback(async platform=>{const snap=await getDocFromServer(doc(db,'app_config',`version_${platform}`));return snap.exists()?snap.data():{};},[db,doc,getDocFromServer]);
+  const publishRelease=useCallback(async config=>{await setDoc(doc(db,'app_config',`version_${config.platform}`),config,{merge:true});showToast('Release settings published.');},[db,doc,setDoc,showToast]);
 
   // Export CSV
   const handleExport = () => {
@@ -309,11 +226,13 @@ export function AdminApp({
     return filteredDevices(devices, currentTab, searchQuery);
   }, [devices, currentTab, searchQuery]);
 
+  const expirationById = useMemo(() => new Map(devices.map(device => [device.deviceId, getFullExpirationDetails(device,clock)])), [devices,clock]);
+
   const streamingCount = useMemo(() => {
     return devices.filter(isStreaming).length;
-  }, [devices]);
+  }, [devices,clock]);
 
-  const isDeviceView = currentTab === 'all' || currentTab === 'watching' || currentTab === 'pending';
+  const isDeviceView = currentTab === 'all' || currentTab === 'watching' || currentTab === 'pending' || currentTab === 'approved';
 
   return (
     <>
@@ -321,11 +240,6 @@ export function AdminApp({
       <LockScreen
         hidden={authorized}
         onUnlock={handleUnlock}
-        db={db}
-        doc={doc}
-        getDocFromServer={getDocFromServer}
-        auth={auth}
-        signInWithCustomToken={signInWithCustomToken}
       />
 
       {/* 2. EXECUTIVE WORKSPACE */}
@@ -334,7 +248,8 @@ export function AdminApp({
           {/* Top Bar */}
           <TopBar
             streamingCount={streamingCount}
-            onRefresh={() => showToast('Syncing with Firebase...')}
+            onRefresh={() => {setRefreshAttempt(n=>n+1);showToast('Syncing with Firebase…');}}
+            onShowReleases={() => setReleasesOpen(true)}
             onLock={() => handleLock()}
             onExport={handleExport}
           />
@@ -343,7 +258,6 @@ export function AdminApp({
             {/* KPI Metric Cards */}
             <StatsRow
               devices={devices}
-              whitelistedIps={whitelistedIps}
               currentTab={currentTab}
               onSelectTab={setCurrentTab}
               isStreaming={isStreaming}
@@ -356,7 +270,7 @@ export function AdminApp({
               totalCount={devices.length}
               streamingCount={streamingCount}
               pendingCount={devices.filter(d => d.status === 'pending').length}
-              whitelistCount={whitelistedIps.length}
+              approvedCount={devices.filter(d => d.status === 'approved').length}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               isDeviceView={isDeviceView}
@@ -390,7 +304,7 @@ export function AdminApp({
                         key={device.deviceId}
                         device={device}
                         isStreaming={isStreaming}
-                        expirationDetails={getFullExpirationDetails(device)}
+                        expirationDetails={expirationById.get(device.deviceId)}
                         relativeTime={relativeTime}
                         onOpenDetails={handleOpenDetails}
                         onOpenHistory={handleOpenHistory}
@@ -402,14 +316,6 @@ export function AdminApp({
                   )}
                 </div>
               </div>
-
-              {/* WHITELIST TAB */}
-              <WhitelistTab
-                hidden={currentTab !== 'whitelist'}
-                whitelistedIps={whitelistedIps}
-                onAddIp={handleAddWhitelistIp}
-                onRemoveIp={handleRemoveWhitelistIp}
-              />
 
               {/* SECURITY PIN TAB */}
               <SecurityPinTab
@@ -423,7 +329,7 @@ export function AdminApp({
           {/* MODALS */}
           <DurationModal
             device={durationTarget}
-            onClose={() => setDurationTarget(null)}
+            onClose={closeDuration}
             onApprove={handleApproveWithPatch}
             onRevoke={handleRevoke}
             onSaveNote={async (deviceId, noteText) => {
@@ -435,46 +341,18 @@ export function AdminApp({
 
           <HistoryModal
             device={historyTarget}
-            onClose={() => setHistoryTarget(null)}
+            onClose={closeHistory}
             relativeTime={relativeTime}
           />
 
           <ConfirmModal
             title={confirmModalData?.title}
             message={confirmModalData?.message}
-            onCancel={() => setConfirmModalData(null)}
+            onCancel={closeConfirm}
             onConfirm={confirmModalData?.onConfirm}
           />
 
-          {/* APP RELEASES MODAL */}
-          <dialog id="updates" className="sub-modal" style={{ display: 'none' }}>
-            <form
-              id="release-form"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const target = document.getElementById('release-platform')?.value || 'tv';
-                const code = Number(document.getElementById('release-code')?.value) || 1;
-                const url = document.getElementById('release-url')?.value || '';
-                const notes = document.getElementById('release-notes')?.value || '';
-                const force = document.getElementById('release-force')?.checked || false;
-                await setDoc(doc(db, 'app_config', `version_${target}`), {
-                  platform: target,
-                  versionCode: code,
-                  apkUrl: url,
-                  changelog: notes.split('\n').map(s => s.trim()).filter(Boolean),
-                  isForceUpdate: force
-                }, { merge: true });
-              }}
-            >
-              <select id="release-platform"><option value="tv">Fire TV</option></select>
-              <input id="release-name" />
-              <input id="release-code" type="number" />
-              <input id="release-url" type="url" />
-              <textarea id="release-notes" />
-              <input id="release-force" type="checkbox" />
-              <p id="release-error"></p>
-            </form>
-          </dialog>
+          <ReleaseModal open={releasesOpen} onClose={closeReleases} onLoad={loadRelease} onPublish={publishRelease}/>
 
           {/* Toast */}
           {toastMessage && (

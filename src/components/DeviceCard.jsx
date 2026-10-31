@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { DeviceIcon, TvIcon, MobileIcon, PlayIcon, CheckIcon, ClockIcon, TrashIcon, AndroidIcon, AppleIcon } from './Icons.jsx';
 
 export function formatAgo(timestamp, now = Date.now()) {
@@ -59,7 +59,7 @@ export function getDevicePresence(device, now = Date.now()) {
   };
 }
 
-export const DeviceCard = ({
+const DeviceCardView = ({
   device,
   isStreaming,
   expirationDetails,
@@ -104,15 +104,6 @@ export const DeviceCard = ({
     <div
       className="device-card device-row"
       aria-label={`Manage ${device.name || device.deviceId}`}
-      ref={(el) => {
-        if (el && !el._hasClick) {
-          el._hasClick = true;
-          el.addEventListener('click', (e) => {
-            if (e && e.target && e.target.closest && e.target.closest('button')) return;
-            onOpenDetails(device.deviceId);
-          });
-        }
-      }}
       onClick={(e) => {
         if (e && e.target && e.target.closest && e.target.closest('button')) return;
         onOpenDetails(device.deviceId);
@@ -269,3 +260,5 @@ export const DeviceCard = ({
     </div>
   );
 };
+
+export const DeviceCard = memo(DeviceCardView);

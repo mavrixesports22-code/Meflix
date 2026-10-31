@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { adminApi } from '../adminApi.js';
 import { ShieldIcon } from './Icons.jsx';
 
-export const LockScreen = ({ hidden = false, onUnlock, db, doc, getDocFromServer, auth, signInWithCustomToken }) => {
+export const LockScreen = ({ hidden = false, onUnlock }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,65 +33,9 @@ export const LockScreen = ({ hidden = false, onUnlock, db, doc, getDocFromServer
     if (errEl) errEl.textContent = '';
 
     try {
-      let loggedIn = false;
-
-      // 1. Try server login if available
-      if (typeof fetch === 'function') {
-        try {
-          const res = await fetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin: val })
-          });
-          if (res && res.ok) {
-            const data = await res.json();
-            if (data && data.token) {
-              if (auth && typeof signInWithCustomToken === 'function') {
-                await signInWithCustomToken(auth, data.token);
-              }
-              loggedIn = true;
-            }
-          }
-        } catch {
-          // Server backend unavailable (e.g. no Vercel env), fallback to direct Firestore
-        }
-      }
-
-      // 2. Direct Firestore fallback
-      if (!loggedIn) {
-        let targetPin = null;
-
-        // Check app_config/security
-        try {
-          const snap1 = await getDocFromServer(doc(db, 'app_config', 'security'));
-          if (snap1 && (typeof snap1.exists === 'function' ? snap1.exists() : snap1.exists)) {
-            const d1 = typeof snap1.data === 'function' ? snap1.data() : (typeof snap1.data === 'object' ? snap1.data : {});
-            const dataObj = typeof d1 === 'function' ? d1() : d1;
-            targetPin = String(dataObj.pin !== undefined ? dataObj.pin : (dataObj.password !== undefined ? dataObj.password : '')).trim();
-          }
-        } catch {}
-
-        // Check admin_settings/security
-        if (!targetPin) {
-          try {
-            const snap2 = await getDocFromServer(doc(db, 'admin_settings', 'security'));
-            if (snap2 && (typeof snap2.exists === 'function' ? snap2.exists() : snap2.exists)) {
-              const d2 = typeof snap2.data === 'function' ? snap2.data() : (typeof snap2.data === 'object' ? snap2.data : {});
-              const dataObj = typeof d2 === 'function' ? d2() : d2;
-              targetPin = String(dataObj.pin !== undefined ? dataObj.pin : (dataObj.password !== undefined ? dataObj.password : '')).trim();
-            }
-          } catch {}
-        }
-
-        if (!targetPin) targetPin = '1234';
-
-        if (val !== targetPin) {
-          throw new Error('Incorrect PIN. Please try again.');
-        }
-      }
-
-      // Unlock console
-      try { sessionStorage.setItem('meflix_admin_auth', 'true'); } catch {}
+      const data = await adminApi('login', {pin:val});
+      if (!data.token) throw new Error('Unable to verify console access.');
+      await onUnlock(data.token);
       setPin('');
       if (inputEl) inputEl.value = '';
       updateDots(0);
@@ -100,7 +45,6 @@ export const LockScreen = ({ hidden = false, onUnlock, db, doc, getDocFromServer
       const lk = document.getElementById('lock');
       if (lk) lk.hidden = true;
 
-      onUnlock();
     } catch (err) {
       const msg = err.message || 'Unable to unlock console.';
       setError(msg);
@@ -182,16 +126,6 @@ export const LockScreen = ({ hidden = false, onUnlock, db, doc, getDocFromServer
 
         <form
           id="login-form"
-          ref={(form) => {
-            if (form && !form._hasNativeSubmit) {
-              form._hasNativeSubmit = true;
-              form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const inputEl = document.getElementById('pin');
-                handleSubmit(inputEl?.value || pin);
-              });
-            }
-          }}
           onSubmit={(e) => {
             e.preventDefault();
             const inputEl = document.getElementById('pin');

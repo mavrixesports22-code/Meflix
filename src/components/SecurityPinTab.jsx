@@ -39,27 +39,7 @@ export const SecurityPinTab = ({ hidden = false, onUpdatePin, onLock }) => {
 
     setBusy(true);
     try {
-      let serverChanged = false;
-      if (typeof fetch === 'function') {
-        try {
-          const res = await fetch('/api/admin/pin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ currentPin: cur, newPin: np })
-          });
-          if (res && res.ok) {
-            const data = await res.json();
-            if (data && data.changed) {
-              serverChanged = true;
-            }
-          }
-        } catch {}
-      }
-
-      if (onUpdatePin) {
-        await onUpdatePin(cur, np, serverChanged);
-      }
-
+      await onUpdatePin(cur, np);
       setNotice({ text: 'PIN successfully updated in Firebase!', isError: false });
       if (errEl) errEl.textContent = 'PIN successfully updated in Firebase!';
 
@@ -96,15 +76,6 @@ export const SecurityPinTab = ({ hidden = false, onUpdatePin, onLock }) => {
       <div className="pin-card-wrapper">
         <form
           id="pin-form"
-          ref={(form) => {
-            if (form && !form._hasNativeSubmit) {
-              form._hasNativeSubmit = true;
-              form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                handleSubmit(e);
-              });
-            }
-          }}
           onSubmit={handleSubmit}
           className="pin-update-form"
         >
