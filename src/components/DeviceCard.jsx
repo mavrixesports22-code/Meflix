@@ -21,9 +21,9 @@ export function getDevicePresence(device, now = Date.now()) {
     return {
       type: 'streaming',
       label: 'STREAMING NOW',
-      dotClass: 'green-dot-pulse',
+      dotClass: 'green-dot',
       pillClass: 'pill-streaming',
-      color: '#10B981'
+      color: '#22C55E'
     };
   }
 
@@ -36,7 +36,7 @@ export function getDevicePresence(device, now = Date.now()) {
       label: 'ONLINE',
       dotClass: 'green-dot',
       pillClass: 'pill-online',
-      color: '#10B981'
+      color: '#22C55E'
     };
   }
 
@@ -46,7 +46,7 @@ export function getDevicePresence(device, now = Date.now()) {
       label: 'IDLE',
       dotClass: 'amber-dot',
       pillClass: 'pill-idle',
-      color: '#F59E0B'
+      color: '#D97706'
     };
   }
 
@@ -80,15 +80,15 @@ export const DeviceCard = ({
   const getPlatformDetails = () => {
     const p = (device.platform || '').toLowerCase();
     if (p.includes('tv') || p.includes('fire') || p.includes('androidtv')) {
-      return { icon: <TvIcon size={18} color="#FF4D58" />, glyphCls: 'glyph-tv', name: device.platform || 'Smart TV' };
+      return { icon: <TvIcon size={17} color="#EF4444" />, glyphCls: 'glyph-tv', name: device.platform || 'Smart TV' };
     }
     if (p.includes('apple') || p.includes('ios') || p.includes('iphone') || p.includes('ipad')) {
-      return { icon: <AppleIcon size={18} color="#E2E8F0" />, glyphCls: 'glyph-apple', name: device.platform || 'Apple iOS' };
+      return { icon: <AppleIcon size={17} color="#E2E8F0" />, glyphCls: 'glyph-apple', name: device.platform || 'Apple iOS' };
     }
     if (p.includes('android')) {
-      return { icon: <AndroidIcon size={18} color="#10B981" />, glyphCls: 'glyph-android', name: device.platform || 'Android' };
+      return { icon: <AndroidIcon size={17} color="#22C55E" />, glyphCls: 'glyph-android', name: device.platform || 'Android' };
     }
-    return { icon: <DeviceIcon size={18} color="#94A3B8" />, glyphCls: 'glyph-device', name: device.platform || 'Device' };
+    return { icon: <DeviceIcon size={17} color="#94A3B8" />, glyphCls: 'glyph-device', name: device.platform || 'Device' };
   };
 
   const platformMeta = getPlatformDetails();
@@ -144,7 +144,7 @@ export const DeviceCard = ({
         <div className="status-col">
           {watching ? (
             <div className="watching-now-badge">
-              <span className="green-dot-pulse" />
+              <span className="green-dot" />
               <span>WATCHING NOW</span>
             </div>
           ) : (
@@ -203,7 +203,7 @@ export const DeviceCard = ({
       ) : (!watching && latestWatched && latestWatched.title) ? (
         <div className="recent-stream-bar">
           <div className="recent-stream-info">
-            <span className="recent-stream-label">RECENT TITLE</span>
+            <span className="recent-stream-label">RECENT</span>
             <span className="recent-stream-title">{latestWatched.title}</span>
             {latestWatched.episode ? <span className="recent-stream-ep">{latestWatched.episode}</span> : null}
             {latestWatched.progress ? <span className="recent-stream-pct">({latestWatched.progress}%)</span> : null}

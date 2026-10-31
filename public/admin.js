@@ -1354,9 +1354,9 @@ function getDevicePresence(device, now = Date.now()) {
     return {
       type: "streaming",
       label: "STREAMING NOW",
-      dotClass: "green-dot-pulse",
+      dotClass: "green-dot",
       pillClass: "pill-streaming",
-      color: "#10B981"
+      color: "#22C55E"
     };
   }
   const lastActive = device.lastActiveAt || device.requestedAt;
@@ -1367,7 +1367,7 @@ function getDevicePresence(device, now = Date.now()) {
       label: "ONLINE",
       dotClass: "green-dot",
       pillClass: "pill-online",
-      color: "#10B981"
+      color: "#22C55E"
     };
   }
   if (diff < 864e5) {
@@ -1376,7 +1376,7 @@ function getDevicePresence(device, now = Date.now()) {
       label: "IDLE",
       dotClass: "amber-dot",
       pillClass: "pill-idle",
-      color: "#F59E0B"
+      color: "#D97706"
     };
   }
   return {
@@ -1407,15 +1407,15 @@ var DeviceCard = ({
   const getPlatformDetails = () => {
     const p3 = (device.platform || "").toLowerCase();
     if (p3.includes("tv") || p3.includes("fire") || p3.includes("androidtv")) {
-      return { icon: /* @__PURE__ */ _n.createElement(TvIcon, { size: 18, color: "#FF4D58" }), glyphCls: "glyph-tv", name: device.platform || "Smart TV" };
+      return { icon: /* @__PURE__ */ _n.createElement(TvIcon, { size: 17, color: "#EF4444" }), glyphCls: "glyph-tv", name: device.platform || "Smart TV" };
     }
     if (p3.includes("apple") || p3.includes("ios") || p3.includes("iphone") || p3.includes("ipad")) {
-      return { icon: /* @__PURE__ */ _n.createElement(AppleIcon, { size: 18, color: "#E2E8F0" }), glyphCls: "glyph-apple", name: device.platform || "Apple iOS" };
+      return { icon: /* @__PURE__ */ _n.createElement(AppleIcon, { size: 17, color: "#E2E8F0" }), glyphCls: "glyph-apple", name: device.platform || "Apple iOS" };
     }
     if (p3.includes("android")) {
-      return { icon: /* @__PURE__ */ _n.createElement(AndroidIcon, { size: 18, color: "#10B981" }), glyphCls: "glyph-android", name: device.platform || "Android" };
+      return { icon: /* @__PURE__ */ _n.createElement(AndroidIcon, { size: 17, color: "#22C55E" }), glyphCls: "glyph-android", name: device.platform || "Android" };
     }
-    return { icon: /* @__PURE__ */ _n.createElement(DeviceIcon, { size: 18, color: "#94A3B8" }), glyphCls: "glyph-device", name: device.platform || "Device" };
+    return { icon: /* @__PURE__ */ _n.createElement(DeviceIcon, { size: 17, color: "#94A3B8" }), glyphCls: "glyph-device", name: device.platform || "Device" };
   };
   const platformMeta = getPlatformDetails();
   const formattedRegDate = device.requestedAt ? new Date(device.requestedAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "Unknown";
@@ -1440,7 +1440,7 @@ var DeviceCard = ({
         onOpenDetails(device.deviceId);
       }
     },
-    /* @__PURE__ */ _n.createElement("div", { className: "card-header" }, /* @__PURE__ */ _n.createElement("div", { className: "card-header-main" }, /* @__PURE__ */ _n.createElement("div", { className: `device-glyph ${platformMeta.glyphCls}` }, platformMeta.icon), /* @__PURE__ */ _n.createElement("div", { className: "device-meta-col" }, /* @__PURE__ */ _n.createElement("div", { className: "name-row" }, /* @__PURE__ */ _n.createElement("strong", { className: "device-name" }, device.name || "Unnamed device"), /* @__PURE__ */ _n.createElement("div", { className: `presence-pill ${presence.pillClass}` }, /* @__PURE__ */ _n.createElement("span", { className: `presence-dot ${presence.dotClass}` }), /* @__PURE__ */ _n.createElement("span", { className: "presence-label" }, presence.label))), /* @__PURE__ */ _n.createElement("div", { className: "platform-meta" }, /* @__PURE__ */ _n.createElement("span", null, "Platform: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, platformMeta.name)), /* @__PURE__ */ _n.createElement("span", { className: "meta-separator" }, "\u2022"), /* @__PURE__ */ _n.createElement("span", null, "Registered: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, formattedRegDate)), regAgo ? /* @__PURE__ */ _n.createElement("span", { className: "meta-ago" }, "(", regAgo, ")") : null))), /* @__PURE__ */ _n.createElement("div", { className: "status-col" }, watching ? /* @__PURE__ */ _n.createElement("div", { className: "watching-now-badge" }, /* @__PURE__ */ _n.createElement("span", { className: "green-dot-pulse" }), /* @__PURE__ */ _n.createElement("span", null, "WATCHING NOW")) : /* @__PURE__ */ _n.createElement("div", { className: `status-tag ${exp.cls}`, style: { borderColor: exp.badgeColor, color: exp.badgeColor } }, exp.badge))),
+    /* @__PURE__ */ _n.createElement("div", { className: "card-header" }, /* @__PURE__ */ _n.createElement("div", { className: "card-header-main" }, /* @__PURE__ */ _n.createElement("div", { className: `device-glyph ${platformMeta.glyphCls}` }, platformMeta.icon), /* @__PURE__ */ _n.createElement("div", { className: "device-meta-col" }, /* @__PURE__ */ _n.createElement("div", { className: "name-row" }, /* @__PURE__ */ _n.createElement("strong", { className: "device-name" }, device.name || "Unnamed device"), /* @__PURE__ */ _n.createElement("div", { className: `presence-pill ${presence.pillClass}` }, /* @__PURE__ */ _n.createElement("span", { className: `presence-dot ${presence.dotClass}` }), /* @__PURE__ */ _n.createElement("span", { className: "presence-label" }, presence.label))), /* @__PURE__ */ _n.createElement("div", { className: "platform-meta" }, /* @__PURE__ */ _n.createElement("span", null, "Platform: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, platformMeta.name)), /* @__PURE__ */ _n.createElement("span", { className: "meta-separator" }, "\u2022"), /* @__PURE__ */ _n.createElement("span", null, "Registered: ", /* @__PURE__ */ _n.createElement("strong", { className: "white-text" }, formattedRegDate)), regAgo ? /* @__PURE__ */ _n.createElement("span", { className: "meta-ago" }, "(", regAgo, ")") : null))), /* @__PURE__ */ _n.createElement("div", { className: "status-col" }, watching ? /* @__PURE__ */ _n.createElement("div", { className: "watching-now-badge" }, /* @__PURE__ */ _n.createElement("span", { className: "green-dot" }), /* @__PURE__ */ _n.createElement("span", null, "WATCHING NOW")) : /* @__PURE__ */ _n.createElement("div", { className: `status-tag ${exp.cls}`, style: { borderColor: exp.badgeColor, color: exp.badgeColor } }, exp.badge))),
     /* @__PURE__ */ _n.createElement("div", { className: "details-grid" }, /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "IP ADDRESS"), /* @__PURE__ */ _n.createElement("span", { className: "detail-mono" }, device.ip || "Not recorded")), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "DEVICE ID"), /* @__PURE__ */ _n.createElement("span", { className: "detail-mono" }, device.deviceId)), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "LAST ACTIVE"), /* @__PURE__ */ _n.createElement("span", { className: "detail-value detail-value-active" }, /* @__PURE__ */ _n.createElement("span", { className: `status-micro-dot ${presence.dotClass}` }), /* @__PURE__ */ _n.createElement("strong", { className: "ago-highlight" }, activeAgo))), /* @__PURE__ */ _n.createElement("div", { className: "detail-block" }, /* @__PURE__ */ _n.createElement("span", { className: "detail-label" }, "SUBSCRIPTION VALIDITY"), /* @__PURE__ */ _n.createElement("span", { className: "detail-value", style: { color: exp.badgeColor } }, exp.detail))),
     watching && device.currentTitle ? /* @__PURE__ */ _n.createElement("div", { className: "now-watching-banner" }, /* @__PURE__ */ _n.createElement("div", { className: "now-watching-header" }, /* @__PURE__ */ _n.createElement("div", { className: "now-watching-title-wrap" }, /* @__PURE__ */ _n.createElement(PlayIcon, { size: 13, color: "#E50914" }), /* @__PURE__ */ _n.createElement("span", { className: "now-watching-title" }, device.currentTitle, device.currentEpisode ? ` - ${device.currentEpisode}` : "")), /* @__PURE__ */ _n.createElement("span", { className: "now-watching-pct" }, device.currentProgress || 0, "%")), /* @__PURE__ */ _n.createElement("div", { className: "progress-track" }, /* @__PURE__ */ _n.createElement(
       "div",
@@ -1448,7 +1448,7 @@ var DeviceCard = ({
         className: "progress-fill",
         style: { width: `${Math.min(100, Math.max(5, device.currentProgress || 0))}%` }
       }
-    ))) : !watching && latestWatched && latestWatched.title ? /* @__PURE__ */ _n.createElement("div", { className: "recent-stream-bar" }, /* @__PURE__ */ _n.createElement("div", { className: "recent-stream-info" }, /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-label" }, "RECENT TITLE"), /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-title" }, latestWatched.title), latestWatched.episode ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-ep" }, latestWatched.episode) : null, latestWatched.progress ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-pct" }, "(", latestWatched.progress, "%)") : null), latestWatched.updatedAt ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-ago" }, formatAgo(latestWatched.updatedAt)) : null) : null,
+    ))) : !watching && latestWatched && latestWatched.title ? /* @__PURE__ */ _n.createElement("div", { className: "recent-stream-bar" }, /* @__PURE__ */ _n.createElement("div", { className: "recent-stream-info" }, /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-label" }, "RECENT"), /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-title" }, latestWatched.title), latestWatched.episode ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-ep" }, latestWatched.episode) : null, latestWatched.progress ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-pct" }, "(", latestWatched.progress, "%)") : null), latestWatched.updatedAt ? /* @__PURE__ */ _n.createElement("span", { className: "recent-stream-ago" }, formatAgo(latestWatched.updatedAt)) : null) : null,
     /* @__PURE__ */ _n.createElement("div", { className: "card-actions" }, /* @__PURE__ */ _n.createElement("div", { className: "action-buttons" }, /* @__PURE__ */ _n.createElement(
       "button",
       {
