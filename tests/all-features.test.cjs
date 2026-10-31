@@ -198,6 +198,7 @@ test('all admin features working: history, online active users, KPI stats, appro
   for (let i = 0; i < 10; i++) await Promise.resolve();
   document.getElementById('search').value = 'Dhyan';
   document.getElementById('search').dispatchEvent(new dom.window.Event('input'));
+  for (let i = 0; i < 10; i++) await Promise.resolve();
   assert.equal(document.querySelectorAll('.device-card').length, 1);
   assert.match(document.querySelector('.device-name').textContent, /Dhyan/);
 

@@ -68,9 +68,7 @@ export const LockScreen = ({ hidden = false, onUnlock, db, doc, getDocFromServer
             const dataObj = typeof d1 === 'function' ? d1() : d1;
             targetPin = String(dataObj.pin !== undefined ? dataObj.pin : (dataObj.password !== undefined ? dataObj.password : '')).trim();
           }
-        } catch (e) {
-          console.warn('app_config/security notice:', e);
-        }
+        } catch {}
 
         // Check admin_settings/security
         if (!targetPin) {
@@ -81,9 +79,7 @@ export const LockScreen = ({ hidden = false, onUnlock, db, doc, getDocFromServer
               const dataObj = typeof d2 === 'function' ? d2() : d2;
               targetPin = String(dataObj.pin !== undefined ? dataObj.pin : (dataObj.password !== undefined ? dataObj.password : '')).trim();
             }
-          } catch (e) {
-            console.warn('admin_settings/security notice:', e);
-          }
+          } catch {}
         }
 
         if (!targetPin) targetPin = '1234';

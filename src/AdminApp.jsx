@@ -61,10 +61,7 @@ export function AdminApp({
   const handleOpenHistory = useCallback((d) => {
     setHistoryTarget(d);
     const modal = document.getElementById('history-modal');
-    if (modal) {
-      if (typeof modal.showModal === 'function') modal.showModal();
-      modal.open = true;
-    }
+    if (modal) modal.open = true;
     const nameEl = document.getElementById('history-device-name');
     if (nameEl) nameEl.textContent = d.name || d.deviceId;
     const countEl = document.getElementById('history-count-text');
@@ -91,13 +88,10 @@ export function AdminApp({
 
   const handleOpenDetails = useCallback((deviceId) => {
     const d = devices.find(device => device.deviceId === deviceId);
-    setDurationTarget(d);
     window._activeDevice = d;
+    setDurationTarget(d);
     const modal = document.getElementById('details');
-    if (modal) {
-      if (typeof modal.showModal === 'function') modal.showModal();
-      modal.open = true;
-    }
+    if (modal) modal.open = true;
     const nameEl = document.getElementById('detail-name');
     if (nameEl && d) nameEl.textContent = d.name || d.deviceId;
     const noteEl = document.getElementById('device-note');
@@ -127,6 +121,10 @@ export function AdminApp({
     setDurationTarget(null);
     setHistoryTarget(null);
     setConfirmModalData(null);
+    ['details', 'history-modal', 'confirm', 'updates'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.open = false;
+    });
     const ws = document.getElementById('workspace');
     if (ws) ws.hidden = true;
     const lk = document.getElementById('lock');
@@ -141,14 +139,12 @@ export function AdminApp({
     let unsubWhitelist = null;
 
     try {
-      if (typeof onSnapshot === 'function' && typeof collection === 'function') {
+      if (typeof onSnapshot === 'function' && typeof collection === 'function' && db) {
         unsubDevices = onSnapshot(collection(db, 'device_requests'), { includeMetadataChanges: true }, (snapshot) => {
           if (snapshot && snapshot.docs) {
             const list = snapshot.docs.map(d => ({ ...(typeof d.data === 'function' ? d.data() : d.data), deviceId: d.id }));
             setDevices(list);
           }
-        }, (err) => {
-          console.warn('device_requests onSnapshot notice:', err);
         });
 
         unsubWhitelist = onSnapshot(collection(db, 'whitelisted_ips'), { includeMetadataChanges: true }, (snapshot) => {
@@ -159,19 +155,15 @@ export function AdminApp({
             });
             setWhitelistedIps(list);
           }
-        }, (err) => {
-          console.warn('whitelisted_ips onSnapshot notice:', err);
         });
       }
-    } catch (e) {
-      console.warn('Firestore sync initialization notice:', e);
-    }
+    } catch {}
 
     return () => {
       if (typeof unsubDevices === 'function') unsubDevices();
       if (typeof unsubWhitelist === 'function') unsubWhitelist();
     };
-  }, [db, collection, onSnapshot]);
+  }, [db]);
 
   // Quick 1-Mo Approve
   const handleQuickApprove = useCallback(async (deviceId) => {
@@ -199,10 +191,7 @@ export function AdminApp({
       }
     });
     const confirmEl = document.getElementById('confirm');
-    if (confirmEl) {
-      if (typeof confirmEl.showModal === 'function') confirmEl.showModal();
-      confirmEl.open = true;
-    }
+    if (confirmEl) confirmEl.open = true;
   }, [db, doc, updateDoc, showToast]);
 
   // Delete Device Record
@@ -217,10 +206,7 @@ export function AdminApp({
       }
     });
     const confirmEl = document.getElementById('confirm');
-    if (confirmEl) {
-      if (typeof confirmEl.showModal === 'function') confirmEl.showModal();
-      confirmEl.open = true;
-    }
+    if (confirmEl) confirmEl.open = true;
   }, [db, doc, deleteDoc, showToast]);
 
   // Add IP to Whitelist

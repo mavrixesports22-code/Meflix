@@ -19,8 +19,21 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  const handleClose = () => {
+    const dialog = dialogRef.current || document.getElementById('details');
+    if (dialog) dialog.open = false;
+    if (onClose) onClose();
+  };
+
   useEffect(() => {
+    const dialog = dialogRef.current || document.getElementById('details');
+    if (!dialog) return;
+
+    dialog.showModal = () => { dialog.open = true; };
+    dialog.close = () => { dialog.open = false; if (onClose) onClose(); };
+
     if (device) {
+      dialog.open = true;
       setNote(device.note || '');
       const noteEl = document.getElementById('device-note');
       if (noteEl) noteEl.value = device.note || '';
@@ -36,18 +49,23 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
         setCustomDays('30');
         if (modeEl) modeEl.value = 'scheduled';
       }
+    } else {
+      dialog.open = false;
     }
-  }, [device]);
+  }, [device, onClose]);
 
+  // Mobile back button / keyboard escape
   useEffect(() => {
-    const dialog = dialogRef.current || document.getElementById('details');
-    if (!dialog) return;
-    const handleNativeClose = () => {
-      if (onClose) onClose();
+    if (!device) return;
+    const onPop = () => handleClose();
+    const onKeyDown = (e) => { if (e.key === 'Escape') handleClose(); };
+    window.addEventListener('popstate', onPop);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      window.removeEventListener('keydown', onKeyDown);
     };
-    dialog.addEventListener('close', handleNativeClose);
-    return () => dialog.removeEventListener('close', handleNativeClose);
-  }, [onClose]);
+  }, [device]);
 
   const handleSelectPreset = (preset) => {
     setSelectedPreset(preset.id);
@@ -82,7 +100,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
       const days = mode === 'permanent' ? undefined : Number((typeof document !== 'undefined' && document.getElementById('access-days')?.value) || customDays) || 30;
       const patch = approvalPatch(mode, days);
       await onApprove(currentDev.deviceId, patch);
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.message || 'Failed to apply access pass.');
     } finally {
@@ -97,8 +115,9 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
       className="sub-modal"
       open={Boolean(device)}
       style={{ display: device ? 'flex' : 'none' }}
+      onClick={(e) => { if (e.target === dialogRef.current) handleClose(); }}
     >
-      <div className="sub-modal-card">
+      <div className="sub-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="sub-modal-header">
           <div>
             <span className="sub-modal-eyebrow">DEVICE AUTHORIZATION</span>
@@ -106,7 +125,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
               {device ? (device.name || device.deviceId) : 'Device Details'}
             </h2>
           </div>
-          <button type="button" className="close-sub-modal-btn" onClick={onClose} aria-label="Close dialog">
+          <button type="button" className="close-sub-modal-btn" onClick={handleClose} aria-label="Close dialog">
             <CloseIcon size={16} color="#888888" />
           </button>
         </div>
@@ -207,8 +226,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
             type="button"
             className="btn-danger-outline"
             onClick={() => {
-              const currentDev = device || (typeof window !== 'undefined' ? window._activeDevice : null);
-              if (currentDev && onRevoke) onRevoke(currentDev.deviceId);
+              if (device && onRevoke) onRevoke(device.deviceId);
             }}
           >
             Pause access

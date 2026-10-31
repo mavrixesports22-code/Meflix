@@ -55,6 +55,13 @@ async function handler(req, res) {
   res.end(req.method === 'HEAD' ? undefined : bytes);
 }
 
+process.on('unhandledRejection', (reason) => {
+  console.warn('Backend async notice:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.warn('Backend uncaught notice:', err?.message || err);
+});
+
 if (require.main === module) {
   const port = process.env.PORT || 5173;
   http.createServer(handler).listen(port, () => console.log(`Meflix Admin: http://localhost:${port}`));

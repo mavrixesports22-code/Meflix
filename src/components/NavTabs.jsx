@@ -96,18 +96,8 @@ export const NavTabs = ({
           ref={(el) => {
             if (el && !el._hasInputListener) {
               el._hasInputListener = true;
-              el.addEventListener('input', () => {
-                const val = el.value.trim().toLowerCase();
-                onSearchChange(el.value);
-                const container = document.getElementById('device-list');
-                if (container && val) {
-                  const cards = [...container.querySelectorAll('.device-card')];
-                  cards.forEach(card => {
-                    if (!card.textContent.toLowerCase().includes(val)) {
-                      card.remove();
-                    }
-                  });
-                }
+              el.addEventListener('input', (e) => {
+                onSearchChange(e.target ? e.target.value : el.value);
               });
             }
           }}

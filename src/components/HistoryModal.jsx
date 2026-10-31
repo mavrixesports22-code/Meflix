@@ -4,15 +4,31 @@ import { CloseIcon, PlayIcon } from './Icons.jsx';
 export const HistoryModal = ({ device, onClose, relativeTime }) => {
   const dialogRef = useRef(null);
 
+  const handleClose = () => {
+    const dialog = dialogRef.current || document.getElementById('history-modal');
+    if (dialog) dialog.open = false;
+    if (onClose) onClose();
+  };
+
   useEffect(() => {
     const dialog = dialogRef.current || document.getElementById('history-modal');
     if (!dialog) return;
-    const handleNativeClose = () => {
-      if (onClose) onClose();
+    dialog.showModal = () => { dialog.open = true; };
+    dialog.close = () => { dialog.open = false; if (onClose) onClose(); };
+    dialog.open = Boolean(device);
+  }, [device, onClose]);
+
+  useEffect(() => {
+    if (!device) return;
+    const onPop = () => handleClose();
+    const onKeyDown = (e) => { if (e.key === 'Escape') handleClose(); };
+    window.addEventListener('popstate', onPop);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      window.removeEventListener('keydown', onKeyDown);
     };
-    dialog.addEventListener('close', handleNativeClose);
-    return () => dialog.removeEventListener('close', handleNativeClose);
-  }, [onClose]);
+  }, [device]);
 
   const history = (device && Array.isArray(device.watchHistory)) ? device.watchHistory : [];
 
@@ -23,8 +39,9 @@ export const HistoryModal = ({ device, onClose, relativeTime }) => {
       className="sub-modal"
       open={Boolean(device)}
       style={{ display: device ? 'flex' : 'none' }}
+      onClick={(e) => { if (e.target === dialogRef.current) handleClose(); }}
     >
-      <div className="sub-modal-card history-modal-card">
+      <div className="sub-modal-card history-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="sub-modal-header">
           <div>
             <span className="sub-modal-eyebrow">VIEWING ACTIVITY</span>
@@ -32,7 +49,7 @@ export const HistoryModal = ({ device, onClose, relativeTime }) => {
               {device ? (device.name || device.deviceId) : 'Watch History'}
             </h2>
           </div>
-          <button type="button" className="close-sub-modal-btn" onClick={onClose} aria-label="Close history">
+          <button type="button" className="close-sub-modal-btn" onClick={handleClose} aria-label="Close history">
             <CloseIcon size={16} color="#888888" />
           </button>
         </div>
@@ -75,7 +92,7 @@ export const HistoryModal = ({ device, onClose, relativeTime }) => {
           <span id="history-count-text">
             {history.length} title{history.length === 1 ? '' : 's'} recorded
           </span>
-          <button type="button" className="btn-secondary-dark" onClick={onClose}>
+          <button type="button" className="btn-secondary-dark" onClick={handleClose}>
             Done
           </button>
         </div>

@@ -32,8 +32,8 @@ export const DeviceCard = ({
       className="device-card device-row"
       aria-label={`Manage ${device.name || device.deviceId}`}
       ref={(el) => {
-        if (el && !el._hasNativeCardClick) {
-          el._hasNativeCardClick = true;
+        if (el && !el._hasClick) {
+          el._hasClick = true;
           el.addEventListener('click', (e) => {
             if (e && e.target && e.target.closest && e.target.closest('button')) return;
             onOpenDetails(device.deviceId);

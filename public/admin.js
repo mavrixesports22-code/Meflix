@@ -875,8 +875,7 @@ var LockScreen = ({ hidden = false, onUnlock, db: db2, doc: doc2, getDocFromServ
             const dataObj = typeof d1 === "function" ? d1() : d1;
             targetPin = String(dataObj.pin !== void 0 ? dataObj.pin : dataObj.password !== void 0 ? dataObj.password : "").trim();
           }
-        } catch (e3) {
-          console.warn("app_config/security notice:", e3);
+        } catch {
         }
         if (!targetPin) {
           try {
@@ -886,8 +885,7 @@ var LockScreen = ({ hidden = false, onUnlock, db: db2, doc: doc2, getDocFromServ
               const dataObj = typeof d22 === "function" ? d22() : d22;
               targetPin = String(dataObj.pin !== void 0 ? dataObj.pin : dataObj.password !== void 0 ? dataObj.password : "").trim();
             }
-          } catch (e3) {
-            console.warn("admin_settings/security notice:", e3);
+          } catch {
           }
         }
         if (!targetPin) targetPin = "1234";
@@ -1310,18 +1308,8 @@ var NavTabs = ({
       ref: (el) => {
         if (el && !el._hasInputListener) {
           el._hasInputListener = true;
-          el.addEventListener("input", () => {
-            const val = el.value.trim().toLowerCase();
-            onSearchChange(el.value);
-            const container = document.getElementById("device-list");
-            if (container && val) {
-              const cards = [...container.querySelectorAll(".device-card")];
-              cards.forEach((card) => {
-                if (!card.textContent.toLowerCase().includes(val)) {
-                  card.remove();
-                }
-              });
-            }
+          el.addEventListener("input", (e3) => {
+            onSearchChange(e3.target ? e3.target.value : el.value);
           });
         }
       },
@@ -1373,8 +1361,8 @@ var DeviceCard = ({
       className: "device-card device-row",
       "aria-label": `Manage ${device.name || device.deviceId}`,
       ref: (el) => {
-        if (el && !el._hasNativeCardClick) {
-          el._hasNativeCardClick = true;
+        if (el && !el._hasClick) {
+          el._hasClick = true;
           el.addEventListener("click", (e3) => {
             if (e3 && e3.target && e3.target.closest && e3.target.closest("button")) return;
             onOpenDetails(device.deviceId);
@@ -1475,8 +1463,23 @@ var DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approva
   const [note, setNote] = d2("");
   const [busy, setBusy] = d2(false);
   const [error, setError] = d2("");
+  const handleClose = () => {
+    const dialog = dialogRef.current || document.getElementById("details");
+    if (dialog) dialog.open = false;
+    if (onClose) onClose();
+  };
   A2(() => {
+    const dialog = dialogRef.current || document.getElementById("details");
+    if (!dialog) return;
+    dialog.showModal = () => {
+      dialog.open = true;
+    };
+    dialog.close = () => {
+      dialog.open = false;
+      if (onClose) onClose();
+    };
     if (device) {
+      dialog.open = true;
       setNote(device.note || "");
       const noteEl = document.getElementById("device-note");
       if (noteEl) noteEl.value = device.note || "";
@@ -1491,17 +1494,23 @@ var DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approva
         setCustomDays("30");
         if (modeEl) modeEl.value = "scheduled";
       }
+    } else {
+      dialog.open = false;
     }
-  }, [device]);
+  }, [device, onClose]);
   A2(() => {
-    const dialog = dialogRef.current || document.getElementById("details");
-    if (!dialog) return;
-    const handleNativeClose = () => {
-      if (onClose) onClose();
+    if (!device) return;
+    const onPop = () => handleClose();
+    const onKeyDown = (e3) => {
+      if (e3.key === "Escape") handleClose();
     };
-    dialog.addEventListener("close", handleNativeClose);
-    return () => dialog.removeEventListener("close", handleNativeClose);
-  }, [onClose]);
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [device]);
   const handleSelectPreset = (preset) => {
     setSelectedPreset(preset.id);
     const modeEl = document.getElementById("access-mode");
@@ -1533,7 +1542,7 @@ var DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approva
       const days = mode === "permanent" ? void 0 : Number(typeof document !== "undefined" && document.getElementById("access-days")?.value || customDays) || 30;
       const patch = approvalPatch2(mode, days);
       await onApprove(currentDev.deviceId, patch);
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.message || "Failed to apply access pass.");
     } finally {
@@ -1547,9 +1556,12 @@ var DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approva
       ref: dialogRef,
       className: "sub-modal",
       open: Boolean(device),
-      style: { display: device ? "flex" : "none" }
+      style: { display: device ? "flex" : "none" },
+      onClick: (e3) => {
+        if (e3.target === dialogRef.current) handleClose();
+      }
     },
-    /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-card" }, /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-header" }, /* @__PURE__ */ _n.createElement("div", null, /* @__PURE__ */ _n.createElement("span", { className: "sub-modal-eyebrow" }, "DEVICE AUTHORIZATION"), /* @__PURE__ */ _n.createElement("h2", { id: "detail-name", className: "sub-modal-title" }, device ? device.name || device.deviceId : "Device Details")), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "close-sub-modal-btn", onClick: onClose, "aria-label": "Close dialog" }, /* @__PURE__ */ _n.createElement(CloseIcon, { size: 16, color: "#888888" }))), /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-body" }, /* @__PURE__ */ _n.createElement("p", { className: "sub-modal-sub" }, "Choose a subscription duration pass for this device. Approvals are bound to the device identity permanently."), /* @__PURE__ */ _n.createElement("div", { id: "presets-grid", className: "duration-presets-grid" }, DURATION_PRESETS.map((preset) => {
+    /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-card", onClick: (e3) => e3.stopPropagation() }, /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-header" }, /* @__PURE__ */ _n.createElement("div", null, /* @__PURE__ */ _n.createElement("span", { className: "sub-modal-eyebrow" }, "DEVICE AUTHORIZATION"), /* @__PURE__ */ _n.createElement("h2", { id: "detail-name", className: "sub-modal-title" }, device ? device.name || device.deviceId : "Device Details")), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "close-sub-modal-btn", onClick: handleClose, "aria-label": "Close dialog" }, /* @__PURE__ */ _n.createElement(CloseIcon, { size: 16, color: "#888888" }))), /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-body" }, /* @__PURE__ */ _n.createElement("p", { className: "sub-modal-sub" }, "Choose a subscription duration pass for this device. Approvals are bound to the device identity permanently."), /* @__PURE__ */ _n.createElement("div", { id: "presets-grid", className: "duration-presets-grid" }, DURATION_PRESETS.map((preset) => {
       const isTarget = selectedPreset === preset.id;
       return /* @__PURE__ */ _n.createElement(
         "div",
@@ -1626,8 +1638,7 @@ var DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approva
         type: "button",
         className: "btn-danger-outline",
         onClick: () => {
-          const currentDev = device || (typeof window !== "undefined" ? window._activeDevice : null);
-          if (currentDev && onRevoke) onRevoke(currentDev.deviceId);
+          if (device && onRevoke) onRevoke(device.deviceId);
         }
       },
       "Pause access"
@@ -1649,15 +1660,36 @@ var DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote, approva
 // src/components/HistoryModal.jsx
 var HistoryModal = ({ device, onClose, relativeTime: relativeTime2 }) => {
   const dialogRef = T2(null);
+  const handleClose = () => {
+    const dialog = dialogRef.current || document.getElementById("history-modal");
+    if (dialog) dialog.open = false;
+    if (onClose) onClose();
+  };
   A2(() => {
     const dialog = dialogRef.current || document.getElementById("history-modal");
     if (!dialog) return;
-    const handleNativeClose = () => {
+    dialog.showModal = () => {
+      dialog.open = true;
+    };
+    dialog.close = () => {
+      dialog.open = false;
       if (onClose) onClose();
     };
-    dialog.addEventListener("close", handleNativeClose);
-    return () => dialog.removeEventListener("close", handleNativeClose);
-  }, [onClose]);
+    dialog.open = Boolean(device);
+  }, [device, onClose]);
+  A2(() => {
+    if (!device) return;
+    const onPop = () => handleClose();
+    const onKeyDown = (e3) => {
+      if (e3.key === "Escape") handleClose();
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [device]);
   const history = device && Array.isArray(device.watchHistory) ? device.watchHistory : [];
   return /* @__PURE__ */ _n.createElement(
     "dialog",
@@ -1666,15 +1698,18 @@ var HistoryModal = ({ device, onClose, relativeTime: relativeTime2 }) => {
       ref: dialogRef,
       className: "sub-modal",
       open: Boolean(device),
-      style: { display: device ? "flex" : "none" }
+      style: { display: device ? "flex" : "none" },
+      onClick: (e3) => {
+        if (e3.target === dialogRef.current) handleClose();
+      }
     },
-    /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-card history-modal-card" }, /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-header" }, /* @__PURE__ */ _n.createElement("div", null, /* @__PURE__ */ _n.createElement("span", { className: "sub-modal-eyebrow" }, "VIEWING ACTIVITY"), /* @__PURE__ */ _n.createElement("h2", { id: "history-device-name", className: "sub-modal-title" }, device ? device.name || device.deviceId : "Watch History")), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "close-sub-modal-btn", onClick: onClose, "aria-label": "Close history" }, /* @__PURE__ */ _n.createElement(CloseIcon, { size: 16, color: "#888888" }))), /* @__PURE__ */ _n.createElement("div", { id: "history-list", className: "history-list" }, history.length === 0 ? /* @__PURE__ */ _n.createElement("p", { className: "empty-state" }, "No viewing history recorded for this device.") : history.map((item, idx) => /* @__PURE__ */ _n.createElement("div", { key: `${item.title}-${idx}`, className: "history-row" }, item.poster ? /* @__PURE__ */ _n.createElement("img", { src: item.poster, alt: item.title, className: "history-thumb" }) : /* @__PURE__ */ _n.createElement("div", { className: "history-thumb-placeholder" }, /* @__PURE__ */ _n.createElement(PlayIcon, { size: 14, color: "#666666" })), /* @__PURE__ */ _n.createElement("div", { className: "history-info" }, /* @__PURE__ */ _n.createElement("span", { className: "history-title" }, item.title || "Untitled"), item.episode && /* @__PURE__ */ _n.createElement("span", { className: "history-ep" }, item.episode), /* @__PURE__ */ _n.createElement("div", { className: "history-progress-meta" }, /* @__PURE__ */ _n.createElement("span", { className: "history-progress-pct" }, "Progress: ", item.progress || 0, "%"), item.updatedAt && /* @__PURE__ */ _n.createElement("span", { className: "history-date" }, relativeTime2(item.updatedAt))), /* @__PURE__ */ _n.createElement("div", { className: "progress-track" }, /* @__PURE__ */ _n.createElement(
+    /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-card history-modal-card", onClick: (e3) => e3.stopPropagation() }, /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-header" }, /* @__PURE__ */ _n.createElement("div", null, /* @__PURE__ */ _n.createElement("span", { className: "sub-modal-eyebrow" }, "VIEWING ACTIVITY"), /* @__PURE__ */ _n.createElement("h2", { id: "history-device-name", className: "sub-modal-title" }, device ? device.name || device.deviceId : "Watch History")), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "close-sub-modal-btn", onClick: handleClose, "aria-label": "Close history" }, /* @__PURE__ */ _n.createElement(CloseIcon, { size: 16, color: "#888888" }))), /* @__PURE__ */ _n.createElement("div", { id: "history-list", className: "history-list" }, history.length === 0 ? /* @__PURE__ */ _n.createElement("p", { className: "empty-state" }, "No viewing history recorded for this device.") : history.map((item, idx) => /* @__PURE__ */ _n.createElement("div", { key: `${item.title}-${idx}`, className: "history-row" }, item.poster ? /* @__PURE__ */ _n.createElement("img", { src: item.poster, alt: item.title, className: "history-thumb" }) : /* @__PURE__ */ _n.createElement("div", { className: "history-thumb-placeholder" }, /* @__PURE__ */ _n.createElement(PlayIcon, { size: 14, color: "#666666" })), /* @__PURE__ */ _n.createElement("div", { className: "history-info" }, /* @__PURE__ */ _n.createElement("span", { className: "history-title" }, item.title || "Untitled"), item.episode && /* @__PURE__ */ _n.createElement("span", { className: "history-ep" }, item.episode), /* @__PURE__ */ _n.createElement("div", { className: "history-progress-meta" }, /* @__PURE__ */ _n.createElement("span", { className: "history-progress-pct" }, "Progress: ", item.progress || 0, "%"), item.updatedAt && /* @__PURE__ */ _n.createElement("span", { className: "history-date" }, relativeTime2(item.updatedAt))), /* @__PURE__ */ _n.createElement("div", { className: "progress-track" }, /* @__PURE__ */ _n.createElement(
       "div",
       {
         className: "progress-fill",
         style: { width: `${Math.min(100, Math.max(5, item.progress || 0))}%` }
       }
-    )))))), /* @__PURE__ */ _n.createElement("div", { className: "history-footer" }, /* @__PURE__ */ _n.createElement("span", { id: "history-count-text" }, history.length, " title", history.length === 1 ? "" : "s", " recorded"), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "btn-secondary-dark", onClick: onClose }, "Done")))
+    )))))), /* @__PURE__ */ _n.createElement("div", { className: "history-footer" }, /* @__PURE__ */ _n.createElement("span", { id: "history-count-text" }, history.length, " title", history.length === 1 ? "" : "s", " recorded"), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "btn-secondary-dark", onClick: handleClose }, "Done")))
   );
 };
 
@@ -1879,15 +1914,41 @@ var SecurityPinTab = ({ hidden = false, onUpdatePin, onLock }) => {
 // src/components/ConfirmModal.jsx
 var ConfirmModal = ({ title, message, onCancel, onConfirm }) => {
   const dialogRef = T2(null);
+  const handleClose = () => {
+    const dialog = dialogRef.current || document.getElementById("confirm");
+    if (dialog) dialog.open = false;
+    if (onCancel) onCancel();
+  };
+  const handleConfirmAction = async () => {
+    const dialog = dialogRef.current || document.getElementById("confirm");
+    if (dialog) dialog.open = false;
+    if (onConfirm) await onConfirm();
+  };
   A2(() => {
     const dialog = dialogRef.current || document.getElementById("confirm");
     if (!dialog) return;
-    const handleNativeClose = () => {
+    dialog.showModal = () => {
+      dialog.open = true;
+    };
+    dialog.close = () => {
+      dialog.open = false;
       if (onCancel) onCancel();
     };
-    dialog.addEventListener("close", handleNativeClose);
-    return () => dialog.removeEventListener("close", handleNativeClose);
-  }, [onCancel]);
+    dialog.open = Boolean(title);
+  }, [title, onCancel]);
+  A2(() => {
+    if (!title) return;
+    const onPop = () => handleClose();
+    const onKeyDown = (e3) => {
+      if (e3.key === "Escape") handleClose();
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [title]);
   return /* @__PURE__ */ _n.createElement(
     "dialog",
     {
@@ -1895,15 +1956,18 @@ var ConfirmModal = ({ title, message, onCancel, onConfirm }) => {
       ref: dialogRef,
       className: "sub-modal",
       open: Boolean(title),
-      style: { display: title ? "flex" : "none" }
+      style: { display: title ? "flex" : "none" },
+      onClick: (e3) => {
+        if (e3.target === dialogRef.current) handleClose();
+      }
     },
-    /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-card", style: { maxWidth: "380px" } }, /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-header" }, /* @__PURE__ */ _n.createElement("h2", { id: "confirm-title", className: "sub-modal-title" }, title || "Confirm Action"), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "close-sub-modal-btn", onClick: onCancel, "aria-label": "Cancel" }, /* @__PURE__ */ _n.createElement(CloseIcon, { size: 16, color: "#888888" }))), /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-body" }, /* @__PURE__ */ _n.createElement("p", { id: "confirm-message", className: "sub-modal-sub", style: { marginTop: "8px" } }, message)), /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-actions", style: { marginTop: "20px" } }, /* @__PURE__ */ _n.createElement(
+    /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-card", style: { maxWidth: "380px" }, onClick: (e3) => e3.stopPropagation() }, /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-header" }, /* @__PURE__ */ _n.createElement("h2", { id: "confirm-title", className: "sub-modal-title" }, title), /* @__PURE__ */ _n.createElement("button", { type: "button", className: "close-sub-modal-btn", onClick: handleClose, "aria-label": "Cancel" }, /* @__PURE__ */ _n.createElement(CloseIcon, { size: 16, color: "#888888" }))), /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-body" }, /* @__PURE__ */ _n.createElement("p", { id: "confirm-message", className: "sub-modal-sub", style: { marginTop: "8px" } }, message)), /* @__PURE__ */ _n.createElement("div", { className: "sub-modal-actions", style: { marginTop: "20px" } }, /* @__PURE__ */ _n.createElement(
       "button",
       {
         id: "cancel-confirm",
         type: "button",
         className: "btn-secondary-dark",
-        onClick: onCancel
+        onClick: handleClose
       },
       "Cancel"
     ), /* @__PURE__ */ _n.createElement(
@@ -1912,7 +1976,7 @@ var ConfirmModal = ({ title, message, onCancel, onConfirm }) => {
         id: "accept-confirm",
         type: "button",
         className: "btn-danger-red",
-        onClick: onConfirm
+        onClick: handleConfirmAction
       },
       /* @__PURE__ */ _n.createElement(TrashIcon, { size: 13, color: "#FFFFFF" }),
       /* @__PURE__ */ _n.createElement("span", null, "Confirm")
@@ -1994,10 +2058,7 @@ function AdminApp({
   const handleOpenHistory = b2((d3) => {
     setHistoryTarget(d3);
     const modal = document.getElementById("history-modal");
-    if (modal) {
-      if (typeof modal.showModal === "function") modal.showModal();
-      modal.open = true;
-    }
+    if (modal) modal.open = true;
     const nameEl = document.getElementById("history-device-name");
     if (nameEl) nameEl.textContent = d3.name || d3.deviceId;
     const countEl = document.getElementById("history-count-text");
@@ -2023,13 +2084,10 @@ function AdminApp({
   }, []);
   const handleOpenDetails = b2((deviceId) => {
     const d3 = devices.find((device) => device.deviceId === deviceId);
-    setDurationTarget(d3);
     window._activeDevice = d3;
+    setDurationTarget(d3);
     const modal = document.getElementById("details");
-    if (modal) {
-      if (typeof modal.showModal === "function") modal.showModal();
-      modal.open = true;
-    }
+    if (modal) modal.open = true;
     const nameEl = document.getElementById("detail-name");
     if (nameEl && d3) nameEl.textContent = d3.name || d3.deviceId;
     const noteEl = document.getElementById("device-note");
@@ -2059,6 +2117,10 @@ function AdminApp({
     setDurationTarget(null);
     setHistoryTarget(null);
     setConfirmModalData(null);
+    ["details", "history-modal", "confirm", "updates"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.open = false;
+    });
     const ws = document.getElementById("workspace");
     if (ws) ws.hidden = true;
     const lk = document.getElementById("lock");
@@ -2070,14 +2132,12 @@ function AdminApp({
     let unsubDevices = null;
     let unsubWhitelist = null;
     try {
-      if (typeof onSnapshot2 === "function" && typeof collection2 === "function") {
+      if (typeof onSnapshot2 === "function" && typeof collection2 === "function" && db2) {
         unsubDevices = onSnapshot2(collection2(db2, "device_requests"), { includeMetadataChanges: true }, (snapshot) => {
           if (snapshot && snapshot.docs) {
             const list = snapshot.docs.map((d3) => ({ ...typeof d3.data === "function" ? d3.data() : d3.data, deviceId: d3.id }));
             setDevices(list);
           }
-        }, (err) => {
-          console.warn("device_requests onSnapshot notice:", err);
         });
         unsubWhitelist = onSnapshot2(collection2(db2, "whitelisted_ips"), { includeMetadataChanges: true }, (snapshot) => {
           if (snapshot && snapshot.docs) {
@@ -2087,18 +2147,15 @@ function AdminApp({
             });
             setWhitelistedIps(list);
           }
-        }, (err) => {
-          console.warn("whitelisted_ips onSnapshot notice:", err);
         });
       }
-    } catch (e3) {
-      console.warn("Firestore sync initialization notice:", e3);
+    } catch {
     }
     return () => {
       if (typeof unsubDevices === "function") unsubDevices();
       if (typeof unsubWhitelist === "function") unsubWhitelist();
     };
-  }, [db2, collection2, onSnapshot2]);
+  }, [db2]);
   const handleQuickApprove = b2(async (deviceId) => {
     const patch = approvalPatch("scheduled", 30);
     await updateDoc2(doc2(db2, "device_requests", deviceId), patch);
@@ -2120,10 +2177,7 @@ function AdminApp({
       }
     });
     const confirmEl = document.getElementById("confirm");
-    if (confirmEl) {
-      if (typeof confirmEl.showModal === "function") confirmEl.showModal();
-      confirmEl.open = true;
-    }
+    if (confirmEl) confirmEl.open = true;
   }, [db2, doc2, updateDoc2, showToast]);
   const handleDelete = b2((deviceId) => {
     setConfirmModalData({
@@ -2136,10 +2190,7 @@ function AdminApp({
       }
     });
     const confirmEl = document.getElementById("confirm");
-    if (confirmEl) {
-      if (typeof confirmEl.showModal === "function") confirmEl.showModal();
-      confirmEl.open = true;
-    }
+    if (confirmEl) confirmEl.open = true;
   }, [db2, doc2, deleteDoc2, showToast]);
   const handleAddWhitelistIp = async (ip) => {
     const cleanIp = ip.trim();
