@@ -50,7 +50,7 @@ function field(label,value,wide=false) { return element('div',{class:`detail-fie
 function openDetails(id) {
   const d=state.devices.find(device=>device.deviceId===id); if(!d) return;
   state.selected=id; $('detail-name').textContent=d.name||'Unnamed device'; $('detail-error').textContent='';
-  const mode=element('select',{id:'access-mode','aria-label':'Access mode'},[element('option',{value:'permanent'},'Permanent · approve once'),element('option',{value:'scheduled'},'Scheduled access')]);
+  const mode=element('select',{id:'access-mode','aria-label':'Access mode'},[element('option',{value:'permanent'},'Permanent (One-time approval · Never asks again)'),element('option',{value:'scheduled'},'Scheduled access (Temporary days)')]);
   mode.value=d.expiresAt?'scheduled':'permanent';
   const days=element('input',{id:'access-days',type:'number',min:1,max:3650,value:30,'aria-label':'Access duration in days'});
   const duration=element('div',{class:'detail-field',id:'duration-field'},[element('label',{for:'access-days'},'Duration in days'),days]);
@@ -61,7 +61,7 @@ function openDetails(id) {
     field('Platform',d.platform),field('Last seen',relativeTime(d.lastActiveAt || d.requestedAt)),field('Device identity',d.deviceId,true),
     field('Requested',d.requestedAt?new Date(d.requestedAt).toLocaleString():''),field('Approved',d.approvedAt?new Date(d.approvedAt).toLocaleString():''),
     ...(d.ip?[field('IP Address',d.ip,true)]:[]),
-    element('div',{class:'detail-field wide'},[element('label',{for:'access-mode'},'Access policy'),mode,element('p',{class:'mode-note'},'Permanent access has no expiry. All app versions supported.')]),duration,
+    element('div',{class:'detail-field wide'},[element('label',{for:'access-mode'},'Access policy'),mode,element('p',{class:'mode-note'},'Permanent access is bound to this device. It will NEVER ask the user to request access again, regardless of Wi-Fi or mobile data changes.')]),duration,
     element('div',{class:'detail-field wide'},[element('label',{for:'device-note'},'Private note'),notes,element('div',{class:'note-actions'},[element('button',{class:'text-button',type:'button',onClick:()=>run(async()=>{await updateDoc(doc(db,'device_requests',id),{note:notes.value.trim()});toast('Note saved.');})},'Save note'),element('button',{class:'text-danger',type:'button',onClick:async()=>{if(await confirmAction('Delete device record?','Pausing or deleting will remove access for this device.')) await run(async()=>{
       await deleteDoc(doc(db,'device_requests',id));
       if(d.ip){
