@@ -3,5 +3,13 @@
 .agents
 .codex
 node_modules
-tools
+.runtime
+api/netmirror
+lib/netmirror-service.js
+js
+css
+assets
+netmirror-service.js
+index.html
+manifest.webmanifest
 *.md

@@ -1,10 +1,10 @@
-FROM node:22-slim
-
-ENV NODE_ENV=production
+FROM node:22-alpine
 WORKDIR /app
-
-COPY --chown=node:node . .
-
-USER node
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY public ./public
+COPY lib ./lib
+COPY server.js ./
+ENV PORT=8080
 EXPOSE 8080
 CMD ["node", "server.js"]

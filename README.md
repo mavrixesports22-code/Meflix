@@ -1,182 +1,49 @@
-# 🎬 Meflix — Web Movies & TV Shows Platform
+# Meflix Admin
 
-[![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel&style=for-the-badge)](https://vercel.com)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0-339933?logo=node.js&style=for-the-badge)](https://nodejs.org)
-[![JavaScript](https://img.shields.io/badge/ES6%2B-Vanilla-F7DF1E?logo=javascript&style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+A separate administration console for Meflix. This repository now serves the admin console only; the movie catalog/player and proxy endpoints have been removed.
 
-**Meflix** is a high-performance, cinematic streaming platform featuring live discovery rows, authentic dark-mode aesthetics, responsive mobile & desktop viewports, an integrated HLS video player engine, and instant seed catalog loading.
+## Simple PIN access
 
-Engineered for zero-dependency standalone execution and seamless serverless production deployment on **Vercel**.
+The entry screen follows the supplied reference: black background, four dots, a circular numeric keypad and backspace. Enter four digits to unlock automatically. There is **no email sign-in, failed-attempt cooldown, attempt lockout or idle auto-lock**. Sessions persist until you choose Lock or the PIN changes. PINs are verified on the server against a salted scrypt hash stored in Firestore, not compared with a public browser value.
 
----
+The dashboard includes device search, watching/pending/approved/paused/expired filters, permanent approval by default, optional scheduled access, private notes, viewing activity, CSV export, app release settings and PIN changes.
 
-## ✨ Highlights & Features
+## Run locally
 
-- **Cinematic Dark Theme UI**:
-  - Sticky glassmorphism navigation, dynamic billboard hero banner, and fluid carousel shelves.
-  - Responsive design adapting dynamically from desktop monitors down to mobile phone portrait/landscape views.
-  - Pure Vanilla CSS and modern typography (Google Fonts *Outfit* & *Inter*).
+Use Node 22 or later. Run `npm ci`, set the server environment variables below, then `npm start`. The default local URL is http://localhost:5173. `npm run build` prepares the static assets in `dist`; the Node API must also run for PIN verification.
 
-- **Rich Content Catalog**:
-  - Top 10 Today, Trending Series, Bollywood, Asian Cinema, Drama, Crime, Documentaries, Anime, and 90-Minute Films.
-  - Multi-season navigation with per-episode cards, duration badges, and synopses.
-  - Pre-cached seed catalog in `.runtime/netflix-catalog.json` ensures zero cold-start delay on first deployment.
+## Firebase / Vercel setup
 
-- **Adaptive Video Player**:
-  - HLS.js streaming engine with automatic fallback to native browser HLS (Safari/iOS).
-  - Multi-audio language track switcher and closed caption (CC) subtitle toggling.
-  - Aspect ratio fit controls (Contain, Cover, 16:9), keyboard shortcuts (Space, Arrow keys, M, F).
-  - Mini-player picture-in-picture mode while continuing to browse titles.
+1. In Firebase Authentication, enable **Anonymous** sign-in for app device identities. The admin does not need an email/password account or an `admins/<UID>` allowlist entry.
+2. In the hosting provider's private server environment, set `FIREBASE_PROJECT_ID=meflix-544c6` and `FIREBASE_SERVICE_ACCOUNT_JSON` to a Firebase Admin service account JSON credential for this project. On a Google-managed runtime, Application Default Credentials can be used instead. Keep this credential out of Git, browser code and chat.
+3. Set `MEFLIX_ADMIN_INITIAL_PIN` privately to your chosen **four digits**. No PIN is hardcoded or supplied by this repository. The first successful setup creates `admin_settings/security` with a salted hash. After initialization you can remove the initial-PIN environment variable; Firebase retains the current PIN.
+4. Deploy the updated native app together with `firestore.rules`. Publish rules using `firebase deploy --only firestore:rules --project meflix-544c6` **after coordinating the migration** below. The PIN API uses a Firebase custom token; Firestore rules verify its admin claim and current PIN version.
+5. Import this repo in Vercel or keep its existing integration. Its build is `npm run build`, output is `dist`, and `/api/admin/[action].js` supplies the PIN API. Configure the same server variables for every deployed environment that should work. Deploy on HTTPS.
 
-- **Persistent Watch History & My List**:
-  - Exact playback position resume stored in browser `localStorage`.
-  - Add/remove titles to personal *My List*.
-  - Privacy-preserving architecture (no session tokens or streaming URLs saved to storage).
+Open **Security → Change admin PIN** in the console whenever you want to change the PIN. It updates Firebase and invalidates old console sessions; existing approved app devices are unaffected. If you lose the PIN, use your trusted server/Firebase credentials to reset the private security record and reinitialize it with a new private initial PIN. Public clients cannot read or edit that security record.
 
----
+## Device access: approve once
 
-## 🚀 Vercel Production Deployment
+The updated native app uses a persisted Firebase anonymous identity for each installation. The document ID and `ownerUid` are that identity. IP addresses neither grant nor revoke access. Reopening the app, restarting the device, updating the signed APK, or changing Wi-Fi does not create another request. A repeat request cannot replace an existing approval with pending.
 
-### Option 1: Deploy via Vercel Dashboard / Git Integration (Recommended)
-1. Push this repository to GitHub: `https://github.com/mavrixesports22-code/Meflix.git`.
-2. Go to [Vercel Dashboard](https://vercel.com/new).
-3. Import the `Meflix` repository.
-4. **Framework Preset**: Select `Other` (or leave default).
-5. **Root Directory**: `./` (leave default).
-6. **Build Command**: None needed (zero-build architecture).
-7. **Output Directory**: `./` (leave default).
-8. Set the required Environment Variable for **Production**, **Preview**, and **Development**:
-   - `SESSION_SECRET`: Generate a unique value with `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`. It seals the HttpOnly playback session cookie. Without it, the API returns a configuration error instead of using a known production key.
-9. Click **Deploy**.
+Permanent approval stores `expiresAt: null`; access remains until you pause or delete the device. Optional dated passes remain available. Online revocations are observed through Firestore. An offline device can keep its last verified approval until it reconnects, so immediate offline revocation is not claimed.
 
-Vercel automatically detects:
-- Static assets (`index.html`, `css/`, `js/`, `assets/`, `manifest.webmanifest`).
-- Serverless Functions (`api/netmirror/[...path].js`, `api/health.js`).
-- Rewrites and security headers from `vercel.json`.
+Clearing app data/uninstalling can remove the identity and require a new approval. A software installation identity is not a hardware serial number and cannot promise persistence through a factory reset.
 
-### Option 2: Deploy using Vercel CLI
-```bash
-npm install -g vercel
-vercel --prod
-```
+### One-time migration from the old app
 
----
+Older records used locally generated IDs and IP whitelists without authenticated ownership. The new app preserves its previous ID as `legacyDeviceId` on its new request so you can match it, but does not automatically claim another record's approval. Approve the new device once, then retire its legacy record. Existing legacy documents remain visible for review; they cannot be approved through the new console until they have an authenticated owner. Do not delete old approvals or publish new rules before the updated app and console are ready.
 
-## 💻 Local Development
+The old in-app/TV admin screen and local PIN self-approval path have been removed. Client-side IP whitelist grants are disabled in the new rules.
 
-Meflix uses standard Node.js built-ins with **zero external npm dependencies**.
+## Verification
 
-### 1. Start the Server
-```bash
-# Using npm
-npm start
-
-# Or directly with Node
-node server.js
-```
-
-### 2. Open in Browser
-Visit [http://localhost:5173](http://localhost:5173).
-
----
-
-## 🧪 Test Suite
-
-Run the full verification suite (including the Vercel serverless handler checks):
-
-```bash
-npm test
-node tools/verify-vercel.cjs
-```
-
-### Run Individual Checks
-```bash
-node tools/check-media-resources.cjs
-node tools/check-catalog-data.cjs
-node tools/check-player-reliability.cjs
-node tools/check-upstream-reliability.cjs
-node tools/check-catalog.cjs
-node tools/check-home-ui.cjs
-node tools/check-watch-history.cjs
-node tools/check-netmirror.cjs
-node tools/verify-vercel.cjs
-```
-
----
-
-## 🔒 Security & Architecture
-
-- **Stateless Serverless Sessions**: Session states are sealed with AES-256-GCM authentication tags in HTTP-only cookies. Any distributed Vercel lambda instance can verify and process requests without shared server memory.
-- **SSRF Hardening**: All upstream resolution strictly enforces public HTTPS endpoints and rejects RFC-1918 private IPv4/IPv6 address ranges.
-- **Credential Protection**: Ephemeral streaming media handles (`v1_*`) hide raw CDN addresses and sensitive tokens from the browser.
-- **Strict Content Security**: Configured in `vercel.json` with `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, and `Referrer-Policy: strict-origin-when-cross-origin`.
-
----
-
-## 📁 Repository Structure
+`npm test` runs PIN/server/model/DOM interaction tests; the rule test skips when emulators are absent. Run all tests, including real Firestore authorization rules, with:
 
 ```
-meflix/
-├── index.html                  # Main application entry point
-├── manifest.webmanifest        # PWA application manifest
-├── vercel.json                 # Vercel deployment & routing config
-├── package.json                # Scripts and metadata
-├── server.js                   # Local development HTTP server
-├── netmirror-service.js        # NetMirror service module
-├── .gitignore                  # Git ignore rules
-│
-├── api/                        # Vercel Serverless Functions
-│   ├── health.js               # Deployment health check
-│   └── netmirror/
-│       └── [...path].js        # NetMirror API router
-│
-├── assets/                     # Brand logos and iconography
-│   └── brand/
-│       ├── meflix-mx.png
-│       └── meflix-wordmark.png
-│
-├── css/                        # Modular stylesheet system
-│   ├── netflix.css             # Core design system and layout
-│   ├── ui-polish.css           # Cards, hover effects, buttons
-│   ├── player.css              # Desktop player controls
-│   ├── player-mobile.css       # Mobile player touch layout
-│   ├── mobile-app.css          # Bottom navigation and mobile shell
-│   └── home-experience.css     # Billboard and hero transitions
-│
-├── js/                         # Client-side architecture
-│   ├── netflix.js              # Core UI orchestration & navigation
-│   ├── catalog-service.js      # Dynamic catalog discovery & caching
-│   ├── netmirror-player.js     # HLS audio/video playback engine
-│   ├── watch-history.js        # Resume state and user library
-│   ├── mobile-shell.js         # Mobile layout controller
-│   ├── data.js                 # Local fallback metadata
-│   └── vendor/
-│       └── hls.min.js          # Vendored HLS.js player library
-│
-├── lib/                        # Backend utilities
-│   ├── catalog-cache.js        # Multi-tier catalog cache
-│   ├── catalog-data.js         # Record normalizers
-│   ├── media-resources.js      # Encrypted handle manager
-│   └── upstream.js             # Upstream transport & retry engine
-│
-├── .runtime/                   # Bundled seed catalog
-│   └── netflix-catalog.json    # Instant cold-start catalog data
-│
-└── tools/                      # Test & verification suites
-    ├── check-catalog-data.cjs
-    ├── check-catalog.cjs
-    ├── check-home-ui.cjs
-    ├── check-media-resources.cjs
-    ├── check-netmirror.cjs
-    ├── check-player-reliability.cjs
-    ├── check-upstream-reliability.cjs
-    ├── check-watch-history.cjs
-    └── verify-vercel.cjs
+firebase emulators:exec --only "auth,firestore" --project demo-meflix-admin "npm test"
 ```
 
----
+The `demo-` project and local emulators isolate these tests from production data. Tests cover incorrect-PIN immediate retry, PIN changes, session invalidation, device ownership, self-approval denial, legacy/IP denial, app-update metadata, UI actions and CSV formula escaping. Browser control was unavailable for a complete visual pass in this environment; DOM interaction tests do not establish pixel-perfect rendering.
 
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+There are no secrets in the public Firebase client configuration. `FIREBASE_SERVICE_ACCOUNT_JSON` and the initial PIN must remain server-only.

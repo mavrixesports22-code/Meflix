@@ -1,24 +1,21 @@
 {
-  "name": "meflix",
-  "version": "1.0.0",
-  "description": "Meflix — Production-Ready Movies & TV Streaming Platform with Live Discovery and Dynamic Video Player",
-  "main": "server.js",
+  "name": "meflix-admin",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Meflix device access administration console",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node tools/check-media-resources.cjs && node tools/check-catalog-data.cjs && node tools/check-player-reliability.cjs && node tools/check-upstream-reliability.cjs && node tools/check-catalog.cjs && node tools/check-home-ui.cjs && node tools/check-watch-history.cjs && node tools/check-netmirror.cjs && node tools/verify-vercel.cjs"
+    "test": "node --test --test-concurrency=1 tests/*.test.cjs",
+    "build": "node tools/build-admin.cjs"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20"
   },
-  "keywords": [
-    "meflix",
-    "netflix-clone",
-    "streaming",
-    "hls-player",
-    "entertainment",
-    "video-player"
-  ],
-  "author": "Mavrix Technologies",
-  "license": "MIT"
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
 }
