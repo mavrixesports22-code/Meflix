@@ -1,0 +1,13 @@
+# Root-only exclusions; keep every file under public/ available to the build.
+/.git/
+/.vercel/
+/.github/
+/.agents/
+/.codex/
+/node_modules/
+/dist/
+/tests/
+/.env*
+/*.md
+/firestore.rules
+/firebase.json

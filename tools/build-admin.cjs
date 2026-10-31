@@ -1,0 +1,1 @@
+const fs=require('node:fs');const path=require('node:path');const root=path.resolve(__dirname,'..');fs.mkdirSync(path.join(root,'dist'),{recursive:true});for(const name of ['index.html','admin.css','admin.js','model.js','firebase-config.js'])fs.copyFileSync(path.join(root,'public',name),path.join(root,'dist',name));console.log('Admin assets built in dist/');
