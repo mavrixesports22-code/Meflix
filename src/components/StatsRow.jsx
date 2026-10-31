@@ -68,3 +68,4 @@ export const StatsRow = ({ devices, whitelistedIps, currentTab, onSelectTab, isS
     </div>
   );
 };
+
