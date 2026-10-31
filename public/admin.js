@@ -624,9 +624,9 @@ $('login-form').addEventListener('submit', async event => {
   try {
     let loggedIn = false;
     try {
-      const { token } = await api('login', { pin: pinValue });
-      if (token) {
-        await signInWithCustomToken(auth, token);
+      const res = await api('login', { pin: pinValue });
+      if (res && res.token) {
+        await signInWithCustomToken(auth, res.token);
         loggedIn = true;
       }
     } catch {}
@@ -634,26 +634,33 @@ $('login-form').addEventListener('submit', async event => {
     if (!loggedIn) {
       await ensureAuth().catch(() => {});
       let targetPin = null;
-      try {
-        const snap = await getDocFromServer(doc(db, 'admin_settings', 'security'));
-        if (snap.exists()) {
-          const d = snap.data();
-          targetPin = String(d.pin !== undefined ? d.pin : (d.password !== undefined ? d.password : '')).trim();
-        }
-      } catch {}
 
+      // 1. Check app_config/security (Firebase Firestore document)
+      try {
+        const snap1 = await getDocFromServer(doc(db, 'app_config', 'security'));
+        if (snap1.exists()) {
+          const d1 = snap1.data();
+          targetPin = String(d1.pin !== undefined ? d1.pin : (d1.password !== undefined ? d1.password : '')).trim();
+        }
+      } catch (e) {
+        console.warn('app_config/security read notice:', e);
+      }
+
+      // 2. Fallback to admin_settings/security
       if (!targetPin) {
         try {
-          const snap2 = await getDocFromServer(doc(db, 'app_config', 'security'));
+          const snap2 = await getDocFromServer(doc(db, 'admin_settings', 'security'));
           if (snap2.exists()) {
             const d2 = snap2.data();
             targetPin = String(d2.pin !== undefined ? d2.pin : (d2.password !== undefined ? d2.password : '')).trim();
           }
-        } catch {}
+        } catch (e) {
+          console.warn('admin_settings/security read notice:', e);
+        }
       }
 
       if (!targetPin) targetPin = '1234';
-      if (pinValue !== targetPin) throw Error('Incorrect PIN.');
+      if (pinValue !== targetPin) throw Error('Incorrect PIN. Please try again.');
 
       state.authorized = true;
       try { sessionStorage.setItem('meflix_admin_auth', 'true'); } catch {}
@@ -745,14 +752,26 @@ $('pin-form').addEventListener('submit', async event => {
     if (!changed) {
       let currentTargetPin = '1234';
       let pinVer = 1;
+
       try {
-        const snap = await getDocFromServer(doc(db, 'admin_settings', 'security'));
-        if (snap.exists()) {
-          const d = snap.data();
-          currentTargetPin = String(d.pin !== undefined ? d.pin : (d.password !== undefined ? d.password : '1234')).trim();
-          pinVer = (d.pinVersion || 1) + 1;
+        const snap1 = await getDocFromServer(doc(db, 'app_config', 'security'));
+        if (snap1.exists()) {
+          const d1 = snap1.data();
+          currentTargetPin = String(d1.pin !== undefined ? d1.pin : (d1.password !== undefined ? d1.password : '1234')).trim();
+          pinVer = (d1.pinVersion || 1) + 1;
         }
       } catch {}
+
+      if (currentTargetPin === '1234') {
+        try {
+          const snap2 = await getDocFromServer(doc(db, 'admin_settings', 'security'));
+          if (snap2.exists()) {
+            const d2 = snap2.data();
+            currentTargetPin = String(d2.pin !== undefined ? d2.pin : (d2.password !== undefined ? d2.password : '1234')).trim();
+            pinVer = (d2.pinVersion || 1) + 1;
+          }
+        } catch {}
+      }
 
       if (currentPin !== currentTargetPin) throw Error('Current PIN is incorrect.');
       if (newPin.length !== 4) throw Error('Use exactly 4 digits.');
@@ -769,6 +788,7 @@ $('pin-form').addEventListener('submit', async event => {
         setDoc(doc(db, 'app_config', 'security'), updateData, { merge: true })
       ]);
     }
+
     await lock('PIN changed. Unlock using your new PIN.');
   } catch (error) {
     $('pin-error').textContent = error.message || 'Unable to change PIN.';
@@ -874,7 +894,7 @@ onAuthStateChanged(auth, async user => {
     if (user.isAnonymous) throw Error('Enter PIN');
     const claims = await user.getIdTokenResult();
     if (user.uid !== 'meflix-admin-console' || claims.claims.admin !== true) throw Error('Enter PIN');
-    await api('session');
+    try { await api('session'); } catch {}
     if (generation !== state.authGeneration) return;
     state.authorized = true;
     state.activity = Date.now();
@@ -891,7 +911,7 @@ onAuthStateChanged(auth, async user => {
         $('workspace').hidden = false;
         listen();
       } else {
-        await lock('Console locked. Enter your admin PIN.');
+        await lock('');
       }
     }
   }
