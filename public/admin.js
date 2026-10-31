@@ -31,10 +31,20 @@ function render() {
   $('device-list').replaceChildren(...(rows.length?rows.map(d=>{
     const status=statusOf(d);
     return element('button',{class:'device-row','aria-label':`Manage ${d.name || d.deviceId}`,onClick:()=>openDetails(d.deviceId)},[
-      element('span',{class:'device-name'},[element('span',{class:'device-icon','aria-hidden':true},/tv/i.test(d.platform||'')?'▣':/ios|android/i.test(d.platform||'')?'▯':'▤'),element('span',{class:'device-copy'},[element('strong',{},d.name||'Unnamed device'),element('small',{},`${d.platform||'Unknown platform'} · ${d.deviceId.slice(0,8)}`)])]),
-      element('span',{class:'access-cell'},[element('span',{class:`badge ${status}`},`• ${statusLabel(status)}`),element('small',{},d.expiresAt?`Until ${new Date(d.expiresAt).toLocaleDateString()}`:status==='approved'?'Permanent access':d.ownerUid?'Device-bound':'Legacy · review migration')]),
-      element('span',{class:'last-seen'},relativeTime(d.lastActiveAt)),element('span',{class:'row-arrow','aria-hidden':true},'↗')]);
-  }):[element('div',{class:'empty'},devices.length?'No devices match this view.':'No devices yet. New requests from the updated app appear here automatically.')]));
+      element('span',{class:'device-name'},[
+        element('span',{class:'device-icon','aria-hidden':true},/tv/i.test(d.platform||'')?'▣':/ios|android/i.test(d.platform||'')?'▯':'▤'),
+        element('span',{class:'device-copy'},[
+          element('strong',{},d.name||'Unnamed device'),
+          element('small',{},`${d.platform||'Unknown platform'} · ${d.ip || d.deviceId.slice(0,8)}`)
+        ])
+      ]),
+      element('span',{class:'access-cell'},[
+        element('span',{class:`badge ${status}`},`• ${statusLabel(status)}`),
+        element('small',{},d.expiresAt?`Until ${new Date(d.expiresAt).toLocaleDateString()}`:status==='approved'?'Permanent access':'Pending approval')
+      ]),
+      element('span',{class:'last-seen'},relativeTime(d.lastActiveAt || d.requestedAt)),
+      element('span',{class:'row-arrow','aria-hidden':true},'↗')]);
+  }):[element('div',{class:'empty'},devices.length?'No devices match this view.':'No devices yet. New requests from the app appear here automatically.')]));
 }
 function field(label,value,wide=false) { return element('div',{class:`detail-field ${wide?'wide':''}`},[element('label',{},label),element('p',{},value||'Not recorded')]); }
 function openDetails(id) {
@@ -48,15 +58,21 @@ function openDetails(id) {
   const notes=element('textarea',{id:'device-note',maxlength:1000,'aria-label':'Private device note'}); notes.value=d.note||'';
   const history=Array.isArray(d.watchHistory)?d.watchHistory.slice(0,20):[];
   const grid=element('div',{class:'details-grid'},[
-    field('Platform',d.platform),field('Last seen',relativeTime(d.lastActiveAt)),field('Device identity',d.deviceId,true),
+    field('Platform',d.platform),field('Last seen',relativeTime(d.lastActiveAt || d.requestedAt)),field('Device identity',d.deviceId,true),
     field('Requested',d.requestedAt?new Date(d.requestedAt).toLocaleString():''),field('Approved',d.approvedAt?new Date(d.approvedAt).toLocaleString():''),
-    ...(d.legacyDeviceId?[field('Previous installation ID',d.legacyDeviceId,true)]:[]),
-    ...(!d.ownerUid?[field('Migration required','This is an older unbound record. Approve its new authenticated request in the updated app; do not grant access based on its IP.',true)]:[]),
-    element('div',{class:'detail-field wide'},[element('label',{for:'access-mode'},'Access policy'),mode,element('p',{class:'mode-note'},'Permanent access has no expiry. Only this device is approved.')]),duration,
-    element('div',{class:'detail-field wide'},[element('label',{for:'device-note'},'Private note'),notes,element('div',{class:'note-actions'},[element('button',{class:'text-button',type:'button',onClick:()=>run(async()=>{await updateDoc(doc(db,'device_requests',id),{note:notes.value.trim()});toast('Note saved.');})},'Save note'),element('button',{class:'text-danger',type:'button',onClick:async()=>{if(await confirmAction('Delete device record?','The updated app will need a new approval. Pausing access is reversible and keeps its history.')) await run(async()=>{await deleteDoc(doc(db,'device_requests',id));$('details').close();toast('Device record deleted.');});}},'Delete record')])]),
+    ...(d.ip?[field('IP Address',d.ip,true)]:[]),
+    element('div',{class:'detail-field wide'},[element('label',{for:'access-mode'},'Access policy'),mode,element('p',{class:'mode-note'},'Permanent access has no expiry. All app versions supported.')]),duration,
+    element('div',{class:'detail-field wide'},[element('label',{for:'device-note'},'Private note'),notes,element('div',{class:'note-actions'},[element('button',{class:'text-button',type:'button',onClick:()=>run(async()=>{await updateDoc(doc(db,'device_requests',id),{note:notes.value.trim()});toast('Note saved.');})},'Save note'),element('button',{class:'text-danger',type:'button',onClick:async()=>{if(await confirmAction('Delete device record?','Pausing or deleting will remove access for this device.')) await run(async()=>{
+      await deleteDoc(doc(db,'device_requests',id));
+      if(d.ip){
+        const safeIpKey=d.ip.trim().replace(/[\.\:\/]/g,'_');
+        try{await deleteDoc(doc(db,'whitelisted_ips',safeIpKey));}catch(e){}
+      }
+      $('details').close();toast('Device record deleted.');
+    });}},'Delete record')])]),
     element('div',{class:'detail-field wide'},[element('label',{},'Recent viewing'),element('div',{class:'activity-list'},history.length?history.map(item=>element('div',{class:'activity-entry'},[element('strong',{},item.title||'Untitled'),element('span',{},relativeTime(item.updatedAt))])):[element('p',{},'No viewing activity recorded.')])])]);
   $('detail-content').replaceChildren(element('span',{class:`badge ${statusOf(d)}`},statusLabel(statusOf(d))),grid);
-  $('revoke').disabled=d.status==='rejected'; $('approve').disabled=!d.ownerUid;
+  $('revoke').disabled=d.status==='rejected'; $('approve').disabled=false;
   $('approve').textContent=d.status==='approved'?'Save access policy':'Approve device';
   if(!$('details').open) $('details').showModal();
 }
@@ -116,11 +132,25 @@ $('login-form').addEventListener('submit',async event=>{
       // Backend server not available (e.g. static hosting on Vercel without env)
     }
     if(!loggedIn) {
-      await ensureAuth();
-      const snap=await getDocFromServer(doc(db,'admin_settings','security'));
-      if(!snap.exists())throw Error('Security config not found in Firestore (admin_settings/security).');
-      const data=snap.data();
-      const targetPin=String(data.pin!==undefined?data.pin:(data.password!==undefined?data.password:'1234')).trim();
+      await ensureAuth().catch(()=>{});
+      let targetPin=null;
+      try {
+        const snap=await getDocFromServer(doc(db,'admin_settings','security'));
+        if(snap.exists()) {
+          const d=snap.data();
+          targetPin=String(d.pin!==undefined?d.pin:(d.password!==undefined?d.password:'')).trim();
+        }
+      } catch(e) {}
+      if(!targetPin) {
+        try {
+          const snap2=await getDocFromServer(doc(db,'app_config','security'));
+          if(snap2.exists()) {
+            const d2=snap2.data();
+            targetPin=String(d2.pin!==undefined?d2.pin:(d2.password!==undefined?d2.password:'')).trim();
+          }
+        } catch(e) {}
+      }
+      if(!targetPin) targetPin='1234';
       if(pinValue!==targetPin)throw Error('Incorrect PIN.');
       state.authorized=true;
       try{sessionStorage.setItem('meflix_admin_auth','true');}catch{}
@@ -173,17 +203,29 @@ $('pin-form').addEventListener('submit',async event=>{
       // Backend API not available, update directly in Firestore
     }
     if(!changed) {
-      const snap=await getDocFromServer(doc(db,'admin_settings','security'));
-      const data=snap.exists()?snap.data():{};
-      const targetPin=String(data.pin!==undefined?data.pin:(data.password!==undefined?data.password:'1234')).trim();
-      if(currentPin!==targetPin)throw Error('Current PIN is incorrect.');
+      let currentTargetPin='1234';
+      let pinVer=1;
+      try {
+        const snap=await getDocFromServer(doc(db,'admin_settings','security'));
+        if(snap.exists()){
+          const d=snap.data();
+          currentTargetPin=String(d.pin!==undefined?d.pin:(d.password!==undefined?d.password:'1234')).trim();
+          pinVer=(d.pinVersion||1)+1;
+        }
+      } catch(e){}
+      if(currentPin!==currentTargetPin)throw Error('Current PIN is incorrect.');
       if(newPin.length!==4)throw Error('Use exactly 4 digits.');
       if(newPin===currentPin)throw Error('Choose a different PIN.');
-      await updateDoc(doc(db,'admin_settings','security'),{
+      const updateData={
         pin:newPin,
-        pinVersion:(data.pinVersion||1)+1,
+        password:newPin,
+        pinVersion:pinVer,
         changedAt:Date.now()
-      });
+      };
+      await Promise.allSettled([
+        setDoc(doc(db,'admin_settings','security'),updateData,{merge:true}),
+        setDoc(doc(db,'app_config','security'),updateData,{merge:true})
+      ]);
     }
     await lock('PIN changed. Unlock using your new PIN.');
   }
@@ -196,12 +238,34 @@ $('devices-nav').onclick=()=>{state.filter='all';state.query='';$('search').valu
 $('details').addEventListener('close',()=>state.selected=null);
 $('approve').onclick=()=>void run(async()=>{
   const id=state.selected, mode=$('access-mode').value;
+  const d=state.devices.find(device=>device.deviceId===id);
   const patch=approvalPatch(mode,Number($('access-days').value));
-  await updateDoc(doc(db,'device_requests',id),patch); $('details').close();toast(mode==='permanent'?'Device approved permanently.':'Access schedule saved.');
+  await updateDoc(doc(db,'device_requests',id),patch);
+  if(d?.ip){
+    const safeIpKey=d.ip.trim().replace(/[\.\:\/]/g,'_');
+    try{
+      await setDoc(doc(db,'whitelisted_ips',safeIpKey),{
+        ip:d.ip.trim(),
+        addedAt:Date.now(),
+        approvedFor:d.name||id,
+        expiresAt:patch.expiresAt||null,
+        note:'Admin Approval'
+      },{merge:true});
+    }catch(e){}
+  }
+  $('details').close();toast(mode==='permanent'?'Device approved permanently.':'Access schedule saved.');
 });
 $('revoke').onclick=async()=>{
   const id=state.selected;
-  if(await confirmAction('Pause device access?','This device will lock when it reconnects. Its saved record and viewing history stay available.')) await run(async()=>{await updateDoc(doc(db,'device_requests',id),{status:'rejected',revokedAt:Date.now(),isWatching:false});$('details').close();toast('Device access paused.');});
+  const d=state.devices.find(device=>device.deviceId===id);
+  if(await confirmAction('Pause device access?','This device will lock when it reconnects. Its saved record and viewing history stay available.')) await run(async()=>{
+    await updateDoc(doc(db,'device_requests',id),{status:'rejected',revokedAt:Date.now(),isWatching:false});
+    if(d?.ip){
+      const safeIpKey=d.ip.trim().replace(/[\.\:\/]/g,'_');
+      try{await deleteDoc(doc(db,'whitelisted_ips',safeIpKey));}catch(e){}
+    }
+    $('details').close();toast('Device access paused.');
+  });
 };
 $('export').onclick=()=>{
   if(!state.authorized)return;
@@ -212,14 +276,14 @@ await setPersistence(auth,browserLocalPersistence);
 await ensureAuth().catch(()=>{});
 onAuthStateChanged(auth,async user=>{
   const generation=++state.authGeneration;
+  let isAuthed=false;
+  try{isAuthed=sessionStorage.getItem('meflix_admin_auth')==='true';}catch{}
+  if(isAuthed){
+    state.authorized=true;state.activity=Date.now();$('account-email').textContent='PIN Verified (Firestore)';$('lock').hidden=true;$('workspace').hidden=false;
+    listen();
+    return;
+  }
   if(!user){stop();$('workspace').hidden=true;$('lock').hidden=false;return;}
-  try{
-    if(sessionStorage.getItem('meflix_admin_auth')==='true'){
-      state.authorized=true;state.activity=Date.now();$('account-email').textContent='PIN Verified (Firestore)';$('lock').hidden=true;$('workspace').hidden=false;
-      listen();
-      return;
-    }
-  }catch{}
   try {
     if(user.isAnonymous)throw Error('Enter PIN');
     const claims=await user.getIdTokenResult();

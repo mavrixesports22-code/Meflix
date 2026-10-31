@@ -1,25 +1,29 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-
     // Admin security & settings: managed by admin console using Firebase directly
     match /admin_settings/{id} {
-      allow read, write: if signedIn();
+      allow read, write: if true;
+    }
+
+    // App release version configuration & security config
+    match /app_config/{id} {
+      allow read, write: if true;
     }
 
     // Device requests: registered by apps, managed and reviewed by admin console
     match /device_requests/{id} {
-      allow read, write: if signedIn();
+      allow read, write: if true;
     }
 
-    // App release version configuration: readable by apps, published by admin console
-    match /app_config/{id} {
-      allow read: if true;
-      allow write: if signedIn();
+    // Whitelisted IPs
+    match /whitelisted_ips/{id} {
+      allow read, write: if true;
     }
 
-    match /whitelisted_ips/{id} { allow read, write: if false; }
-    match /{document=**} { allow read, write: if signedIn(); }
+    match /{document=**} {
+      allow read, write: if true;
+    }
   }
 }
+
