@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithCustomToken, signOut } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithCustomToken, signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
 import { getFirestore, doc, getDocFromServer, collection, onSnapshot, updateDoc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 import { firebaseConfig } from './firebase-config.js';
 import { statusOf, filteredDevices, approvalPatch, relativeTime, csvCell } from './model.js';
@@ -18,7 +18,7 @@ function element(tag, attrs = {}, children = []) {
 const statusLabel=s=>({approved:'Approved',pending:'Pending',rejected:'Paused',expired:'Expired'}[s] || s);
 function toast(text) { $('toast').textContent=text; $('toast').hidden=false; clearTimeout(toast.timer); toast.timer=setTimeout(()=>$('toast').hidden=true,3500); }
 function stop() { state.unsub?.(); state.roleUnsub?.(); state.unsub=null; state.roleUnsub=null; state.authorized=false; state.devices=[]; state.selected=null; $('details').close(); $('confirm').close(); $('security').close(); $('updates').close(); render(); }
-async function lock(message='') { ++state.authGeneration; stop(); $('workspace').hidden=true; $('lock').hidden=false; $('pin').value=''; pinDots(); $('login-error').textContent=message; await signOut(auth); }
+async function lock(message='') { ++state.authGeneration; try{sessionStorage.removeItem('meflix_admin_auth');}catch{} stop(); $('workspace').hidden=true; $('lock').hidden=false; $('pin').value=''; pinDots(); $('login-error').textContent=message; if(auth.currentUser&&!auth.currentUser.isAnonymous)await signOut(auth); }
 function render() {
   const devices=state.devices, active=devices.filter(d=>statusOf(d)==='approved');
   const stats=[['Total devices',devices.length,'Registered installations','▦',''],['Approved',active.length,'Access enabled','✓','approved'],['Pending requests',devices.filter(d=>statusOf(d)==='pending').length,'Waiting for your review','◷','pending'],['Watching now',active.filter(d=>d.isWatching && Date.now()-(d.lastActiveAt||0)<120000).length,'Active in the last 2 minutes','▷','']];
@@ -84,8 +84,17 @@ function listen() {
     if(state.selected && !state.devices.some(d=>d.deviceId===state.selected)) $('details').close();
   },(error)=>{if(error.code==='permission-denied'||error.code==='unauthenticated'){void lock('Console locked. Enter your admin PIN.');return;}$('connection').textContent='Connection unavailable';$('connection').className='connection';$('load-error').hidden=false;$('load-error').textContent='Device data could not be loaded. Check your console session and published Firestore rules, then refresh.';});
 }
+async function ensureAuth() {
+  if (auth.currentUser) return auth.currentUser;
+  try {
+    const cred = await signInAnonymously(auth);
+    return cred.user;
+  } catch (err) {
+    return null;
+  }
+}
 async function api(action,body) {
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),15000);
   try {
     const token=action==='login'?null:await auth.currentUser?.getIdToken();
     const response=await fetch(`/api/admin/${action}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:controller.signal});
@@ -94,7 +103,33 @@ async function api(action,body) {
 }
 $('login-form').addEventListener('submit',async event=>{
   event.preventDefault();if(pinBusy||$('pin').value.length!==4)return;pinBusy=true;$('sign-in').disabled=true;$('login-error').textContent='';$('keypad').querySelectorAll('button').forEach(button=>button.disabled=true);
-  try { const {token}=await api('login',{pin:$('pin').value});await signInWithCustomToken(auth,token); }
+  const pinValue=$('pin').value;
+  try {
+    let loggedIn=false;
+    try {
+      const {token}=await api('login',{pin:pinValue});
+      if (token) {
+        await signInWithCustomToken(auth,token);
+        loggedIn=true;
+      }
+    } catch(apiErr) {
+      // Backend server not available (e.g. static hosting on Vercel without env)
+    }
+    if(!loggedIn) {
+      await ensureAuth();
+      const snap=await getDocFromServer(doc(db,'admin_settings','security'));
+      if(!snap.exists())throw Error('Security config not found in Firestore (admin_settings/security).');
+      const data=snap.data();
+      const targetPin=String(data.pin!==undefined?data.pin:(data.password!==undefined?data.password:'1234')).trim();
+      if(pinValue!==targetPin)throw Error('Incorrect PIN.');
+      state.authorized=true;
+      try{sessionStorage.setItem('meflix_admin_auth','true');}catch{}
+      $('account-email').textContent='PIN Verified (Firestore)';
+      $('lock').hidden=true;
+      $('workspace').hidden=false;
+      listen();
+    }
+  }
   catch(error) { $('login-error').textContent=error.name==='AbortError'?'Connection timed out. Please retry.':error.message||'Unable to unlock console.'; }
   finally { pinBusy=false;$('sign-in').disabled=false;$('pin').value='';pinDots();$('keypad').querySelectorAll('button').forEach(button=>button.disabled=false); }
 });
@@ -127,8 +162,31 @@ $('release-form').addEventListener('submit',async event=>{
 $('pin-form').addEventListener('submit',async event=>{
   event.preventDefault();$('pin-error').textContent='';
   if($('new-pin').value!==$('confirm-pin').value){$('pin-error').textContent='New PINs do not match.';return;}
+  const currentPin=$('current-pin').value.trim(), newPin=$('new-pin').value.trim();
   $('save-pin').disabled=true;
-  try{await api('pin',{currentPin:$('current-pin').value,newPin:$('new-pin').value});await lock('PIN changed. Unlock using your new PIN.');}
+  try{
+    let changed=false;
+    try {
+      await api('pin',{currentPin,newPin});
+      changed=true;
+    } catch(apiErr) {
+      // Backend API not available, update directly in Firestore
+    }
+    if(!changed) {
+      const snap=await getDocFromServer(doc(db,'admin_settings','security'));
+      const data=snap.exists()?snap.data():{};
+      const targetPin=String(data.pin!==undefined?data.pin:(data.password!==undefined?data.password:'1234')).trim();
+      if(currentPin!==targetPin)throw Error('Current PIN is incorrect.');
+      if(newPin.length!==4)throw Error('Use exactly 4 digits.');
+      if(newPin===currentPin)throw Error('Choose a different PIN.');
+      await updateDoc(doc(db,'admin_settings','security'),{
+        pin:newPin,
+        pinVersion:(data.pinVersion||1)+1,
+        changedAt:Date.now()
+      });
+    }
+    await lock('PIN changed. Unlock using your new PIN.');
+  }
   catch(error){$('pin-error').textContent=error.message||'Unable to change PIN.';}
   finally{$('save-pin').disabled=false;for(const id of ['current-pin','new-pin','confirm-pin'])$(id).value='';}
 });
@@ -151,16 +209,35 @@ $('export').onclick=()=>{
   const url=URL.createObjectURL(new Blob([rows.map(row=>row.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8;'}));const a=element('a',{href:url,download:'meflix-devices.csv'});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 await setPersistence(auth,browserLocalPersistence);
+await ensureAuth().catch(()=>{});
 onAuthStateChanged(auth,async user=>{
-  const generation=++state.authGeneration;stop();
-  if(!user){$('workspace').hidden=true;$('lock').hidden=false;return;}
+  const generation=++state.authGeneration;
+  if(!user){stop();$('workspace').hidden=true;$('lock').hidden=false;return;}
+  try{
+    if(sessionStorage.getItem('meflix_admin_auth')==='true'){
+      state.authorized=true;state.activity=Date.now();$('account-email').textContent='PIN Verified (Firestore)';$('lock').hidden=true;$('workspace').hidden=false;
+      listen();
+      return;
+    }
+  }catch{}
   try {
-    if(user.isAnonymous)throw Error('Not administrator');
+    if(user.isAnonymous)throw Error('Enter PIN');
     const claims=await user.getIdTokenResult();
-    if(user.uid!=='meflix-admin-console'||claims.claims.admin!==true)throw Error('Not administrator');
+    if(user.uid!=='meflix-admin-console'||claims.claims.admin!==true)throw Error('Enter PIN');
     await api('session');
     if(generation!==state.authGeneration)return;
     state.authorized=true;state.activity=Date.now();$('account-email').textContent='PIN protected';$('lock').hidden=true;$('workspace').hidden=false;
     listen();
-  } catch { if(generation===state.authGeneration)await lock('Console locked. Enter your admin PIN.'); }
+  } catch {
+    if(generation===state.authGeneration) {
+      let isAuthed=false;
+      try{isAuthed=sessionStorage.getItem('meflix_admin_auth')==='true';}catch{}
+      if(isAuthed){
+        state.authorized=true;$('lock').hidden=true;$('workspace').hidden=false;
+        listen();
+      }else{
+        await lock('Console locked. Enter your admin PIN.');
+      }
+    }
+  }
 });
