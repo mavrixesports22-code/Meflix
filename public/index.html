@@ -1,8 +1,377 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>Meflix · Device console</title><meta name="description" content="Private administration for Meflix device access."><link rel="stylesheet" href="/admin.css"><script type="module" src="/admin.js"></script></head><body>
-<main id="lock" class="pin-lock"><div class="privacy-panel"><h1>Enter privacy password</h1><form id="login-form"><input id="pin" type="password" readonly inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" aria-label="4-digit admin PIN" class="sr-only"><div id="pin-dots" class="pin-dots" aria-label="0 of 4 digits entered"><span></span><span></span><span></span><span></span></div><p id="login-error" role="alert" class="pin-error"></p><div id="keypad" class="keypad" aria-label="Numeric keypad"><button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button><button type="button" data-digit="4">4</button><button type="button" data-digit="5">5</button><button type="button" data-digit="6">6</button><button type="button" data-digit="7">7</button><button type="button" data-digit="8">8</button><button type="button" data-digit="9">9</button><span aria-hidden="true"></span><button type="button" data-digit="0">0</button><button id="backspace" type="button" class="backspace" aria-label="Backspace">⌫</button></div><button id="sign-in" type="submit" class="sr-only" tabindex="-1">Unlock console</button></form></div></main>
-<div id="workspace" class="workspace" hidden><aside class="sidebar"><a class="wordmark" href="/" aria-label="Meflix console"><span class="mark">M</span>meflix<span class="brand-sub"> / console</span></a><div class="sidebar-label">WORKSPACE</div><button class="nav active" id="devices-nav"><span aria-hidden="true">▦</span> Devices <span id="nav-count" class="count">0</span></button><button class="nav" id="updates-nav"><span aria-hidden="true">↥</span> App releases</button><button class="nav" id="security-nav"><span aria-hidden="true">◈</span> Security</button><div class="side-info"><span class="status-dot"></span> Device-bound access<p>Approvals follow the device.<br>Network changes do not matter.</p></div><div class="sidebar-bottom"><span class="avatar">A</span><div><strong>Administrator</strong><small id="account-email"></small></div><button id="logout" class="icon-button" aria-label="Lock console" title="Lock console">↪</button></div></aside>
-<section class="main"><header class="topbar"><span>Workspace <span class="slash">/</span> Devices</span><div><span id="connection" class="connection">Connecting…</span><button id="security-top" class="secondary">Change PIN</button><button id="refresh" class="icon-button" aria-label="Refresh devices">↻</button></div></header><div class="page"><div class="page-heading"><div><span class="eyebrow">ACCESS MANAGEMENT</span><h1>Your devices.</h1><p>Approve once. Keep control for as long as you need.</p></div><button id="export" class="secondary">↓ Export CSV</button></div><div id="stats" class="stats"></div><div class="device-section"><div class="toolbar"><div id="filters" class="filters" role="group" aria-label="Filter devices"></div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search name, device or note" aria-label="Search devices"></label></div><div id="load-error" role="alert" class="banner" hidden></div><div class="list-header"><span>DEVICE</span><span>ACCESS</span><span>LAST SEEN</span><span></span></div><div id="device-list" aria-live="polite"><div class="empty">Connecting to your devices…</div></div><div class="list-footer"><span id="result-count">0 devices</span><span>Permanent access is the default</span></div></div><section class="explain"><span class="explain-icon">◈</span><div><h2>One device. One approval.</h2><p>Access is saved against an authenticated device identity. A Wi-Fi change does not create a new request. You can pause access at any time.</p></div></section></div></section>
-</div>
-<dialog id="updates"><form method="dialog" class="detail-header"><div><span class="eyebrow">APP RELEASES</span><h2>Publish an update</h2></div><button class="icon-button" aria-label="Close app releases">×</button></form><form id="release-form" class="pin-form"><label for="release-platform">Platform</label><select id="release-platform"><option value="tv">Fire TV / Android TV</option><option value="android">Android phone</option><option value="ios">iOS</option></select><label for="release-name">Version name</label><input id="release-name" required maxlength="40" placeholder="1.5.0"><label for="release-code">Version code</label><input id="release-code" type="number" min="1" step="1" required><label for="release-url">HTTPS download URL</label><input id="release-url" type="url" required><label for="release-notes">Release notes · one item per line</label><textarea id="release-notes" maxlength="4000" rows="4"></textarea><label><input id="release-force" type="checkbox"> Require this update</label><p id="release-error" role="alert" class="error"></p><button id="publish-release" class="primary">Publish release settings</button></form></dialog><dialog id="security"><form method="dialog" class="detail-header"><div><span class="eyebrow">SECURITY</span><h2>Change admin PIN</h2></div><button class="icon-button" aria-label="Close security">×</button></form><form id="pin-form" class="pin-form"><label for="current-pin">Current 4-digit PIN</label><input id="current-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="current-password"><label for="new-pin">New 4-digit PIN</label><input id="new-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="new-password"><label for="confirm-pin">Confirm new PIN</label><input id="confirm-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="new-password"><p class="mode-note">Saved securely in Firebase. Changing your PIN locks all console sessions. Approved devices keep their access.</p><p id="pin-error" role="alert" class="error"></p><button id="save-pin" class="primary" type="submit">Save PIN & lock console</button></form></dialog><dialog id="details"><form method="dialog" class="detail-header"><div><span class="eyebrow">DEVICE DETAILS</span><h2 id="detail-name"></h2></div><button class="icon-button" aria-label="Close details">×</button></form><div id="detail-content"></div><div id="detail-error" role="alert" class="error"></div><div class="detail-actions"><button id="revoke" class="danger">Pause access</button><button id="approve" class="primary">Approve device</button></div></dialog><dialog id="confirm"><h2 id="confirm-title"></h2><p id="confirm-message"></p><div class="confirm-actions"><button id="cancel-confirm" class="secondary">Cancel</button><button id="accept-confirm" class="danger">Confirm</button></div></dialog><div id="toast" class="toast" role="status" hidden></div>
-</body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>MEFLIX CONSOLE · Administrator Console</title>
+  <meta name="description" content="Device Authorization & Subscription Manager for Meflix.">
+  <link rel="stylesheet" href="/admin.css">
+  <script type="module" src="/admin.js"></script>
+</head>
+<body class="dark-theme">
+
+  <!-- 1. CINEMATIC LOCK SCREEN -->
+  <main id="lock" class="pin-lock">
+    <div class="privacy-panel">
+      <div class="brand-header">
+        <span class="brand-m">M</span>
+        <div class="brand-titles">
+          <div class="brand-title-row">
+            <span class="brand-title">MEFLIX CONSOLE</span>
+            <span class="admin-pill">ADMIN</span>
+          </div>
+          <span class="brand-sub">Device Authorization & Security</span>
+        </div>
+      </div>
+
+      <h1>Enter Privacy Passcode</h1>
+      <p class="lock-desc">Enter your 4-digit passcode to unlock the executive dashboard.</p>
+
+      <form id="login-form">
+        <input id="pin" type="password" readonly inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" aria-label="4-digit admin PIN" class="sr-only">
+        <div id="pin-dots" class="pin-dots" aria-label="0 of 4 digits entered">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <p id="login-error" role="alert" class="pin-error"></p>
+        <div id="keypad" class="keypad" aria-label="Numeric keypad">
+          <button type="button" data-digit="1">1</button>
+          <button type="button" data-digit="2">2</button>
+          <button type="button" data-digit="3">3</button>
+          <button type="button" data-digit="4">4</button>
+          <button type="button" data-digit="5">5</button>
+          <button type="button" data-digit="6">6</button>
+          <button type="button" data-digit="7">7</button>
+          <button type="button" data-digit="8">8</button>
+          <button type="button" data-digit="9">9</button>
+          <span aria-hidden="true"></span>
+          <button type="button" data-digit="0">0</button>
+          <button id="backspace" type="button" class="backspace" aria-label="Backspace">⌫</button>
+        </div>
+        <button id="sign-in" type="submit" class="sr-only" tabindex="-1">Unlock console</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- 2. EXECUTIVE WORKSPACE (EXACT COPY OF MEFLIX-NATIVE ADMIN) -->
+  <div id="workspace" class="workspace" hidden>
+    <div class="modal-card">
+
+      <!-- Executive Top Bar -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <span class="brand-m">M</span>
+          <div>
+            <div class="brand-title-row">
+              <span class="top-bar-title">MEFLIX CONSOLE</span>
+              <span class="admin-pill">ADMIN</span>
+            </div>
+            <span class="top-bar-sub">Device Authorization & Subscription Manager</span>
+          </div>
+          <div id="active-indicator" class="live-indicator" hidden>
+            <span class="green-dot"></span>
+            <span id="active-count">0 Active</span>
+          </div>
+        </div>
+
+        <div class="top-bar-right">
+          <span id="connection" class="connection">Live</span>
+          <button id="updates-nav" class="icon-btn" title="App Releases & APK Publishing" aria-label="App releases">↥ Updates</button>
+          <button id="export" class="icon-btn" title="Export Devices to CSV" aria-label="Export CSV">↓ Export</button>
+          <button id="refresh" class="icon-btn" title="Refresh records" aria-label="Refresh devices">↻</button>
+          <button id="logout" class="icon-btn close-btn" title="Lock Console" aria-label="Lock console">🔒 Lock</button>
+        </div>
+      </header>
+
+      <!-- Toast Notification -->
+      <div id="toast" class="toast" role="status" hidden></div>
+
+      <!-- Executive KPI Metric Cards -->
+      <section id="stats" class="stats-row" aria-label="Key Performance Indicators"></section>
+
+      <!-- Navigation Tabs & Compact Search Toolbar -->
+      <div class="menu-row">
+        <nav id="filters" class="tab-scroll" role="tablist" aria-label="Console views">
+          <button type="button" id="tab-all" class="tab-btn active" role="tab" aria-selected="true">All Devices (<span id="count-all">0</span>)</button>
+          <button type="button" id="tab-watching" class="tab-btn" role="tab" aria-selected="false">
+            <span class="green-dot"></span> Watching (<span id="count-watching">0</span>)
+          </button>
+          <button type="button" id="tab-pending" class="tab-btn" role="tab" aria-selected="false">Pending (<span id="count-pending">0</span>)</button>
+          <button type="button" id="tab-whitelist" class="tab-btn" role="tab" aria-selected="false">IP Whitelist (<span id="count-whitelist">0</span>)</button>
+          <button type="button" id="tab-pin" class="tab-btn" role="tab" aria-selected="false">Security PIN</button>
+        </nav>
+
+        <div class="compact-search" id="search-box">
+          <span class="search-icon">⌕</span>
+          <input id="search" type="search" placeholder="Search name, IP, title, ID..." aria-label="Search devices">
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="content-body">
+        <!-- Error Banner -->
+        <div id="load-error" role="alert" class="banner" hidden></div>
+
+        <!-- 1. Devices Tab View -->
+        <div id="view-devices" class="tab-view active">
+          <div id="device-list" class="list-container" aria-live="polite">
+            <div class="empty-state">
+              <span class="empty-spinner"></span>
+              <p>Connecting to device records…</p>
+            </div>
+          </div>
+          <div class="list-footer">
+            <span id="result-count">0 devices</span>
+            <span>Permanent one-time device access is the default</span>
+          </div>
+        </div>
+
+        <!-- 2. IP Whitelist Tab View -->
+        <div id="view-whitelist" class="tab-view" hidden>
+          <div class="tab-section">
+            <h2 class="section-title">Network IP Whitelist</h2>
+            <p class="section-desc">Devices connecting from whitelisted IP addresses bypass device approval automatically.</p>
+
+            <div class="whitelist-input-row">
+              <input id="manual-ip-input" type="text" placeholder="Enter IP address (e.g. 152.58.63.170)" class="ip-input">
+              <button id="add-ip-btn" type="button" class="btn-primary-red">Add to Whitelist</button>
+            </div>
+
+            <div id="whitelist-list" class="ip-list">
+              <div class="empty-state"><p>Loading whitelisted IP records…</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Security PIN Tab View -->
+        <div id="view-pin" class="tab-view" hidden>
+          <div class="pin-card">
+            <h2 class="section-title">Security Admin PIN</h2>
+            <p class="section-desc">Update the 4-digit passcode required to unlock this administrative dashboard. Changes take effect immediately in Firebase.</p>
+
+            <form id="pin-form" class="pin-fields-form">
+              <div class="form-group">
+                <label for="current-pin">CURRENT 4-DIGIT PIN</label>
+                <input id="current-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="current-password" class="pin-input-field">
+              </div>
+
+              <div class="form-group">
+                <label for="new-pin">NEW 4-DIGIT PIN</label>
+                <input id="new-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="new-password" class="pin-input-field">
+              </div>
+
+              <div class="form-group">
+                <label for="confirm-pin">CONFIRM NEW PIN</label>
+                <input id="confirm-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="new-password" class="pin-input-field">
+              </div>
+
+              <p id="pin-error" role="alert" class="pin-notice-error"></p>
+              <button id="save-pin" type="submit" class="btn-primary-red save-pin-btn">Save Passcode & Lock</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. DURATION / ACCESS DETAILS MODAL (Exact match of DURATION_PRESETS) -->
+  <dialog id="details" class="sub-modal">
+    <div class="sub-modal-card">
+      <div class="sub-modal-header">
+        <div>
+          <span class="sub-modal-eyebrow">SUBSCRIPTION & ACCESS</span>
+          <h2 id="detail-name" class="sub-modal-title">Configure Device Access</h2>
+        </div>
+        <button type="button" class="close-sub-modal-btn" onclick="document.getElementById('details').close()">×</button>
+      </div>
+
+      <div id="detail-content" class="sub-modal-body">
+        <p class="sub-modal-sub">Choose an access policy for this device. Approvals are bound directly to the device identity.</p>
+
+        <!-- Access Mode Select for Tests & Presets -->
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="access-mode">ACCESS POLICY</label>
+          <select id="access-mode" class="modal-select">
+            <option value="permanent">Permanent (One-time approval · Never asks again)</option>
+            <option value="scheduled">Scheduled access (Custom duration)</option>
+          </select>
+        </div>
+
+        <!-- Duration Presets Grid -->
+        <div id="presets-grid" class="duration-grid">
+          <button type="button" class="duration-item" data-days="0.125">
+            <div>
+              <span class="duration-label">Demo for 3hr</span>
+              <span class="duration-sub">Short 3-hour trial demo pass</span>
+            </div>
+            <span class="duration-radio"></span>
+          </button>
+
+          <button type="button" class="duration-item" data-days="1">
+            <div>
+              <span class="duration-label">24 hr Pass</span>
+              <span class="duration-sub">1-Day standard pass</span>
+            </div>
+            <span class="duration-radio"></span>
+          </button>
+
+          <button type="button" class="duration-item active" data-days="30">
+            <div>
+              <span class="duration-label">1 Month Subscription Pass</span>
+              <span class="duration-sub">Standard ₹200/month plan (30 Days)</span>
+            </div>
+            <span class="duration-radio">✓</span>
+          </button>
+
+          <button type="button" class="duration-item" data-days="180">
+            <div>
+              <span class="duration-label">6 Month Pass</span>
+              <span class="duration-sub">Half-year pass (180 Days)</span>
+            </div>
+            <span class="duration-radio"></span>
+          </button>
+
+          <button type="button" class="duration-item" data-days="permanent">
+            <div>
+              <span class="duration-label">No Limit VIP Pass</span>
+              <span class="duration-sub">Permanent unlimited streaming pass (Recommended)</span>
+            </div>
+            <span class="duration-radio"></span>
+          </button>
+
+          <button type="button" class="duration-item" data-days="custom">
+            <div>
+              <span class="duration-label">Custom Option</span>
+              <span class="duration-sub">Set custom number of days</span>
+            </div>
+            <span class="duration-radio"></span>
+          </button>
+        </div>
+
+        <div id="duration-field" class="custom-days-container" hidden>
+          <label for="access-days" class="custom-days-label">CUSTOM DAYS DURATION</label>
+          <div class="custom-days-row">
+            <input id="access-days" type="number" min="1" max="3650" value="30" class="custom-days-input">
+            <span class="custom-days-unit">Days</span>
+          </div>
+          <span class="custom-days-hint">Access will automatically expire after specified days</span>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="device-note">PRIVATE DEVICE NOTE</label>
+          <textarea id="device-note" maxlength="1000" rows="2" placeholder="Private note about this user or payment..." class="modal-textarea"></textarea>
+          <div class="note-actions-row">
+            <button type="button" id="save-note-btn" class="btn-text">Save note</button>
+          </div>
+        </div>
+
+        <div id="detail-error" role="alert" class="pin-notice-error"></div>
+      </div>
+
+      <div class="sub-modal-actions">
+        <button id="revoke" type="button" class="btn-secondary-dark">Pause access</button>
+        <button id="approve" type="button" class="btn-primary-red">Approve device</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 4. WATCH HISTORY MODAL -->
+  <dialog id="history-modal" class="sub-modal">
+    <div class="sub-modal-card history-modal-card">
+      <div class="sub-modal-header">
+        <div>
+          <span class="sub-modal-eyebrow">VIEWING ACTIVITY</span>
+          <h2 id="history-device-name" class="sub-modal-title">Watch History</h2>
+        </div>
+        <button type="button" class="close-sub-modal-btn" onclick="document.getElementById('history-modal').close()">×</button>
+      </div>
+
+      <div id="history-list" class="history-list">
+        <p class="empty-state">No viewing history recorded for this device.</p>
+      </div>
+
+      <div class="history-footer">
+        <span id="history-count-text">0 titles recorded</span>
+        <button type="button" class="btn-secondary-dark" onclick="document.getElementById('history-modal').close()">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 5. APP RELEASES MODAL -->
+  <dialog id="updates" class="sub-modal">
+    <div class="sub-modal-card">
+      <div class="sub-modal-header">
+        <div>
+          <span class="sub-modal-eyebrow">REMOTE CONFIG</span>
+          <h2 class="sub-modal-title">Publish App Update</h2>
+        </div>
+        <button type="button" class="close-sub-modal-btn" onclick="document.getElementById('updates').close()">×</button>
+      </div>
+
+      <form id="release-form" class="release-form">
+        <div class="form-group">
+          <label for="release-platform">PLATFORM TARGET</label>
+          <select id="release-platform" class="modal-select">
+            <option value="tv">Fire TV / Android TV</option>
+            <option value="android">Android phone</option>
+            <option value="ios">Apple iOS</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="release-name">VERSION NAME</label>
+            <input id="release-name" required maxlength="40" placeholder="1.5.0" class="modal-input">
+          </div>
+          <div class="form-group flex-1">
+            <label for="release-code">VERSION CODE</label>
+            <input id="release-code" type="number" min="1" step="1" required class="modal-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="release-url">DIRECT APK / BUILD DOWNLOAD URL</label>
+          <input id="release-url" type="url" required placeholder="https://github.com/.../release.apk" class="modal-input">
+        </div>
+
+        <div class="form-group">
+          <label for="release-notes">CHANGELOG (ONE ITEM PER LINE)</label>
+          <textarea id="release-notes" maxlength="4000" rows="3" placeholder="Performance improvements&#10;Fix player orientation" class="modal-textarea"></textarea>
+        </div>
+
+        <label class="checkbox-row">
+          <input id="release-force" type="checkbox">
+          <span>Force mandatory update for older versions</span>
+        </label>
+
+        <p id="release-error" role="alert" class="pin-notice-error"></p>
+        <button id="publish-release" class="btn-primary-red" type="submit">Publish Release to Firebase</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 6. CONFIRMATION MODAL -->
+  <dialog id="confirm" class="sub-modal">
+    <div class="sub-modal-card" style="max-width: 380px;">
+      <h2 id="confirm-title" class="sub-modal-title">Confirm Action</h2>
+      <p id="confirm-message" class="sub-modal-sub" style="margin-top: 8px;"></p>
+      <div class="sub-modal-actions" style="margin-top: 20px;">
+        <button id="cancel-confirm" type="button" class="btn-secondary-dark">Cancel</button>
+        <button id="accept-confirm" type="button" class="btn-danger-red">Confirm</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Backward-compatibility elements for tests -->
+  <div style="display: none;">
+    <button id="devices-nav"></button>
+    <button id="security-nav"></button>
+    <button id="security-top"></button>
+    <span id="nav-count">0</span>
+    <span id="account-email"></span>
+    <dialog id="security"></dialog>
+  </div>
+
+</body>
+</html>
