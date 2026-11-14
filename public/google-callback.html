@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Signing in...</title>
+  <script>
+    (function() {
+      try {
+        var hash = window.location.hash ? window.location.hash.slice(1) : '';
+        var search = window.location.search ? window.location.search.slice(1) : '';
+        var payload = hash || search;
+        var params = new URLSearchParams(payload);
+        
+        var rawState = params.get('state') || '';
+        var returnUrl = '';
+        try {
+          returnUrl = decodeURIComponent(rawState);
+        } catch(e) {
+          returnUrl = rawState;
+        }
+
+        if (!returnUrl || (!returnUrl.startsWith('exp://') && !returnUrl.startsWith('exps://') && !returnUrl.startsWith('meflix://'))) {
+          returnUrl = 'meflix://google-auth';
+        }
+
+        var delim = returnUrl.indexOf('?') >= 0 ? '&' : (returnUrl.indexOf('#') >= 0 ? '&' : '#');
+        window.location.replace(returnUrl + delim + payload);
+      } catch (err) {
+        document.body.innerHTML = '<p style="color:#fff;text-align:center;padding:24px;">Completing sign-in... Please return to Meflix.</p>';
+      }
+    })();
+  </script>
+</head>
+<body style="background:#141414;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+  <div style="text-align:center;padding:20px;">
+    <p style="font-size:16px;letter-spacing:0.5px;">Connecting to Meflix...</p>
+  </div>
+</body>
+</html>

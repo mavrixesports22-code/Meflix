@@ -12,7 +12,8 @@ const files = new Map([
   ['/firebase-config.js', 'firebase-config.js'],
   ['/google-signin.html', 'google-signin.html'],
   ['/google-signin.js', 'google-signin.js'],
-  ['/google-signin.css', 'google-signin.css']
+  ['/google-signin.css', 'google-signin.css'],
+  ['/google-callback.html', 'google-callback.html']
 ]);
 
 const mime = {

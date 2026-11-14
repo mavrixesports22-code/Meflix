@@ -32,7 +32,7 @@ async function build() {
   });
 
   fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-  for (const name of ['index.html', 'admin.css', 'admin.js', 'model.js', 'firebase-config.js', 'google-signin.html', 'google-signin.js', 'google-signin.css']) {
+  for (const name of ['index.html', 'admin.css', 'admin.js', 'model.js', 'firebase-config.js', 'google-signin.html', 'google-signin.js', 'google-signin.css', 'google-callback.html']) {
     fs.copyFileSync(path.join(root, 'public', name), path.join(root, 'dist', name));
   }
   const css=await esbuild.transform(fs.readFileSync(path.join(root,'public','admin.css'),'utf8'),{loader:'css',minify:true});
