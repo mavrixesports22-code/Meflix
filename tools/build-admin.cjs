@@ -38,6 +38,18 @@ async function build() {
   const css=await esbuild.transform(fs.readFileSync(path.join(root,'public','admin.css'),'utf8'),{loader:'css',minify:true});
   fs.writeFileSync(path.join(root,'dist','admin.css'),css.code);
   console.log('Admin React assets built successfully in public/ and dist/');
+
+  // Bundle serverless API handler for Vercel to eliminate runtime ESM require conflicts (jwks-rsa / jose)
+  await esbuild.build({
+    entryPoints: [path.join(root, 'lib', 'admin-handler-entry.cjs')],
+    bundle: true,
+    platform: 'node',
+    target: ['node20'],
+    format: 'cjs',
+    outfile: path.join(root, 'api', 'admin', '[action].js'),
+    minify: true,
+  });
+  console.log('Serverless admin handler bundled successfully in api/admin/[action].js');
 }
 
 build().catch(err => {

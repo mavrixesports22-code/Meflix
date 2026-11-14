@@ -9,8 +9,17 @@ export async function adminApi(action, body, auth, fetcher = fetch) {
       headers: { ...(body ? {'Content-Type':'application/json'} : {}), ...(token ? {Authorization:`Bearer ${token}`} : {}) },
       ...(body ? {body:JSON.stringify(body)} : {}), signal:controller.signal,
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Console request failed.');
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      let preview = '';
+      try {
+        if (typeof response.text === 'function') preview = await response.text();
+      } catch {}
+      throw new Error(response.ok ? 'Unexpected response format.' : `Server error (${response.status})${preview ? ': ' + preview.slice(0, 100) : ''}`);
+    }
+    if (!response.ok) throw new Error(data?.error || 'Console request failed.');
     return data;
   } finally { clearTimeout(timer); }
 }
