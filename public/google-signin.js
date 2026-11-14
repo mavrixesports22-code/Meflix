@@ -2,6 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebas
 import {
   getAuth,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
@@ -16,8 +17,6 @@ let returnUrl = params.get('returnUrl') || '';
 try {
   returnUrl = decodeURIComponent(returnUrl);
 } catch {}
-
-const nonce = params.get('nonce') || '';
 
 // Persist or restore returnUrl
 if (returnUrl) {
@@ -54,10 +53,8 @@ function showFallback(message) {
 function finish(idToken) {
   if (!idToken) return;
   try {
-    sessionStorage.removeItem('meflix_auth_attempted');
-    sessionStorage.removeItem('meflix_last_nonce');
-    localStorage.removeItem('meflix_auth_attempted');
-    localStorage.removeItem('meflix_last_nonce');
+    sessionStorage.removeItem('meflix_redirecting');
+    localStorage.removeItem('meflix_redirecting');
   } catch {}
   updateStatus('Completing sign-in...');
   const target = returnUrl || 'meflix://google-auth';
@@ -65,82 +62,97 @@ function finish(idToken) {
   window.location.replace(`${target}${sep}idToken=${encodeURIComponent(idToken)}&id_token=${encodeURIComponent(idToken)}`);
 }
 
-async function startGoogleRedirect() {
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  try {
-    sessionStorage.setItem('meflix_auth_attempted', '1');
-    localStorage.setItem('meflix_auth_attempted', '1');
-    if (nonce) {
-      sessionStorage.setItem('meflix_last_nonce', nonce);
-      localStorage.setItem('meflix_last_nonce', nonce);
-    }
-  } catch {}
-  await signInWithRedirect(auth, provider);
-}
-
-// User clicked fallback button manually to retry
-button?.addEventListener('click', async () => {
-  button.disabled = true;
+async function handlePopupSignIn() {
+  if (button) button.disabled = true;
   if (errorElem) errorElem.hidden = true;
-  if (fallback) fallback.hidden = true;
-  if (loader) loader.hidden = false;
   updateStatus('Connecting to Google...');
   try {
-    await startGoogleRedirect();
-  } catch (err) {
-    showFallback(err.message || 'Could not redirect to Google.');
-  }
-});
-
-// Main execution flow
-async function main() {
-  // 1. First, check if returning from a successful Google redirect
-  try {
-    const result = await getRedirectResult(auth);
-    if (result) {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const idToken =
-        credential?.idToken ||
-        result?._tokenResponse?.oauthIdToken ||
-        result?._tokenResponse?.idToken;
-      if (idToken) {
-        finish(idToken);
-        return;
-      }
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await signInWithPopup(auth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const idToken =
+      credential?.idToken ||
+      result?._tokenResponse?.oauthIdToken ||
+      result?._tokenResponse?.idToken;
+    if (idToken) {
+      finish(idToken);
+    } else {
+      throw new Error('Google did not return credentials. Please try again.');
     }
   } catch (err) {
+    if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+      if (button) button.disabled = false;
+      return;
+    }
     showFallback(err.message || 'Google sign-in failed. Please try again.');
-    return;
   }
+}
 
-  // 2. Check if we already attempted redirect for this nonce/session
-  let alreadyAttempted = false;
+// Fallback button click uses signInWithPopup (reliable on mobile)
+button?.addEventListener('click', handlePopupSignIn);
+
+// Main execution
+async function main() {
+  let wasRedirecting = false;
   try {
-    const lastNonce = sessionStorage.getItem('meflix_last_nonce') || localStorage.getItem('meflix_last_nonce');
-    const wasAttempted =
-      sessionStorage.getItem('meflix_auth_attempted') === '1' ||
-      localStorage.getItem('meflix_auth_attempted') === '1';
-    if (nonce && lastNonce === nonce && wasAttempted) {
-      alreadyAttempted = true;
-    }
+    wasRedirecting =
+      sessionStorage.getItem('meflix_redirecting') === '1' ||
+      localStorage.getItem('meflix_redirecting') === '1';
   } catch {}
 
-  if (alreadyAttempted) {
-    // Redirect completed or user backed out with null result: show retry button
+  // Reveal fallback button after 3.5s if redirect hasn't completed or navigated
+  const fallbackTimer = setTimeout(() => {
+    showFallback();
+  }, 3500);
+
+  if (wasRedirecting) {
+    // Returning from Google redirect: process redirect credentials
+    updateStatus('Completing sign-in...');
     try {
-      sessionStorage.removeItem('meflix_auth_attempted');
-      localStorage.removeItem('meflix_auth_attempted');
-    } catch {}
-    showFallback('Sign-in was cancelled or delayed.');
+      const result = await getRedirectResult(auth);
+      clearTimeout(fallbackTimer);
+      if (result) {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const idToken =
+          credential?.idToken ||
+          result?._tokenResponse?.oauthIdToken ||
+          result?._tokenResponse?.idToken;
+        if (idToken) {
+          finish(idToken);
+          return;
+        }
+      }
+      try {
+        sessionStorage.removeItem('meflix_redirecting');
+        localStorage.removeItem('meflix_redirecting');
+      } catch {}
+      showFallback('Sign-in cancelled. Tap below to continue.');
+    } catch (err) {
+      clearTimeout(fallbackTimer);
+      try {
+        sessionStorage.removeItem('meflix_redirecting');
+        localStorage.removeItem('meflix_redirecting');
+      } catch {}
+      showFallback(err.message || 'Google sign-in failed. Please try again.');
+    }
     return;
   }
 
-  // 3. Fresh session: automatically launch Google sign-in immediately (One-Tap!)
+  // Fresh visit: DO NOT wait for getRedirectResult (which can hang on mobile)
+  // Immediately start redirect to Google
   try {
-    updateStatus('Connecting to Google...');
-    await startGoogleRedirect();
+    sessionStorage.setItem('meflix_redirecting', '1');
+    localStorage.setItem('meflix_redirecting', '1');
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    await signInWithRedirect(auth, provider);
   } catch (err) {
+    clearTimeout(fallbackTimer);
+    try {
+      sessionStorage.removeItem('meflix_redirecting');
+      localStorage.removeItem('meflix_redirecting');
+    } catch {}
     showFallback(err.message || 'Could not start Google sign-in.');
   }
 }
