@@ -51,12 +51,12 @@ test('Firestore enforces admin role, device ownership, permanent approval and re
  assert.equal((await request(`device_requests/${device.uid}`,device.token)).status,200);
  assert.equal((await request(`device_requests/${device.uid}`,other.token)).status,403);
  assert.equal((await request('device_requests',device.token)).status,403);
- assert.equal((await request('admin_settings/security',device.token)).status,403);
- assert.equal((await request('admin_settings/security',device.token,'PATCH',{pinVersion:1})).status,403);
+ assert.equal((await request('app_config/security',device.token)).status,403);
+ assert.equal((await request('app_config/security',device.token,'PATCH',{pinVersion:1})).status,403);
  assert.equal((await request(`admins/${device.uid}`,device.token,'PATCH',{enabled:true})).status,403);
  assert.equal((await request(`device_requests/${device.uid}`,device.token,'PATCH',{...data,status:'approved',expiresAt:null})).status,403);
  assert.equal((await request('device_requests',outsider.token)).status,403);
- assert.equal((await request('admin_settings/security','owner','PATCH',{pinVersion:1})).status,200);
+ assert.equal((await request('app_config/security','owner','PATCH',{pinVersion:1})).status,200);
  assert.equal((await request('device_requests',admin.token)).status,200);
  assert.equal((await request('app_config/version_tv',admin.token,'PATCH',{versionName:'1.5.0',versionCode:9,apkUrl:'https://example.test/update.apk'})).status,200);
  assert.equal((await request('app_config/version_tv',device.token)).status,200);
@@ -67,6 +67,6 @@ test('Firestore enforces admin role, device ownership, permanent approval and re
  assert.equal((await request(`device_requests/${device.uid}`,admin.token,'PATCH',{...data,status:'rejected',revokedAt:3})).status,200);
  assert.equal((await request(`device_requests/${device.uid}`,device.token,'PATCH',{...data,status:'approved'})).status,403);
  assert.equal((await request('whitelisted_ips/test',device.token)).status,403);
- assert.equal((await request('admin_settings/security','owner','PATCH',{pinVersion:2})).status,200);
+ assert.equal((await request('app_config/security','owner','PATCH',{pinVersion:2})).status,200);
  assert.equal((await request('device_requests',admin.token)).status,403);
 });
