@@ -1,6 +1,7 @@
 # Dependency & Build Output
 node_modules/
 .vercel/
+.firebase/
 dist/
 build/
 
