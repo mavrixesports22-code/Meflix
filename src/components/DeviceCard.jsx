@@ -123,6 +123,7 @@ const DeviceCardView = ({
                 <span className="presence-label">{presence.label}</span>
               </div>
             </div>
+            {device.email && <div className="platform-meta">{device.email}</div>}
             <div className="platform-meta">
               <span>Platform: <strong className="white-text">{platformMeta.name}</strong></span>
               <span className="meta-separator">•</span>

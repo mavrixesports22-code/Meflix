@@ -131,6 +131,7 @@ export const DurationModal = ({ device, onClose, onApprove, onRevoke, onSaveNote
         </div>
 
         <div className="sub-modal-body">
+          {device?.email && <p className="sub-modal-sub">{device.email}</p>}
           <p className="sub-modal-sub">
             Choose a subscription duration pass for this device. Approvals are bound to the device identity permanently.
           </p>

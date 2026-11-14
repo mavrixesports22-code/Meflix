@@ -5,7 +5,7 @@ export function statusOf(device, now = Date.now()) {
 export function filteredDevices(devices, filter, query, now = Date.now()) {
   const term = query.trim().toLocaleLowerCase();
   return devices.filter(d => (filter === 'all' || (filter === 'watching' ? statusOf(d,now) === 'approved' && d.isWatching && now-(d.lastActiveAt||0)<120000 : statusOf(d,now) === filter)) &&
-    (!term || [d.name,d.deviceId,d.platform,d.note,d.legacyDeviceId].some(value => String(value || '').toLocaleLowerCase().includes(term))))
+    (!term || [d.name,d.email,d.deviceId,d.platform,d.note,d.legacyDeviceId].some(value => String(value || '').toLocaleLowerCase().includes(term))))
     .sort((a,b) => (b.requestedAt || 0) - (a.requestedAt || 0));
 }
 export function approvalPatch(mode, days, now = Date.now()) {

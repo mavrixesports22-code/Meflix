@@ -14,10 +14,15 @@ service cloud.firestore {
       allow get: if admin() || owner(id);
       allow list: if admin();
       allow create: if owner(id)
-        && request.resource.data.keys().hasOnly(['deviceId','ownerUid','legacyDeviceId','name','ip','platform','requestedAt','status'])
+        && request.resource.data.keys().hasOnly(['deviceId','ownerUid','legacyDeviceId','name','email','signInMethod','ip','platform','requestedAt','status'])
         && request.resource.data.deviceId == id && request.resource.data.ownerUid == id
         && request.resource.data.status == 'pending'
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && (!('email' in request.resource.data) || (request.resource.data.email is string
+          && request.resource.data.email.size() <= 254
+          && request.resource.data.email.matches('^[^\\s@]+@[^\\s@]+[.][^\\s@]+$')))
+        && (!('signInMethod' in request.resource.data)
+          || request.resource.data.signInMethod in ['guest','password','google'])
         && request.resource.data.platform is string && request.resource.data.platform.size() <= 100
         && request.resource.data.ip == '' && request.resource.data.requestedAt is number;
       allow update: if (admin() && request.resource.data.deviceId == resource.data.deviceId
@@ -26,6 +31,25 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastActiveAt','isWatching','currentTitle','currentEpisode','currentProgress','watchHistory'])
           && request.resource.data.get('watchHistory', []).size() <= 20);
       allow delete: if admin();
+    }
+    // Only encrypted, five-minute Google login results are shared with Expo Go.
+    match /google_signin_sessions/{id} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list: if false;
+      allow create: if signedIn() && id.matches('^[a-f0-9]{64}$')
+        && request.resource.data.keys().hasOnly(['ownerUid','createdAt','status'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.status == 'pending';
+      allow update: if signedIn() && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && resource.data.status == 'pending'
+        && resource.data.createdAt + duration.value(5, 'm') > request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','iv','payload'])
+        && request.resource.data.status == 'ready'
+        && request.resource.data.iv is string && request.resource.data.iv.size() == 16
+        && request.resource.data.payload is string
+        && request.resource.data.payload.size() > 100 && request.resource.data.payload.size() <= 12000;
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
     }
     match /app_config/{id} {
       allow get: if id in ['version','version_tv','version_android','version_ios'];

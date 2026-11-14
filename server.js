@@ -9,7 +9,10 @@ const files = new Map([
   ['/admin.css', 'admin.css'],
   ['/admin.js', 'admin.js'],
   ['/model.js', 'model.js'],
-  ['/firebase-config.js', 'firebase-config.js']
+  ['/firebase-config.js', 'firebase-config.js'],
+  ['/google-signin.html', 'google-signin.html'],
+  ['/google-signin.js', 'google-signin.js'],
+  ['/google-signin.css', 'google-signin.css']
 ]);
 
 const mime = {
@@ -25,7 +28,7 @@ async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebase.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebase.com; frame-src https://meflix-544c6.firebaseapp.com https://accounts.google.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
   );
 
   if (await handleAdmin(req, res)) return;
@@ -51,6 +54,7 @@ async function handler(req, res) {
   }
 
   const bytes = fs.readFileSync(path.join(__dirname, 'public', name));
+  if (pathname === '/google-signin.html') res.setHeader('X-Meflix-Auth-Version', '1');
   res.setHeader('Content-Type', mime[path.extname(name)] || 'application/octet-stream');
   res.end(req.method === 'HEAD' ? undefined : bytes);
 }
