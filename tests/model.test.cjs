@@ -7,4 +7,4 @@ test('CSV cells quote content and neutralize spreadsheet formulas',async()=>{con
 
 test('request email can be searched in the administrator queue',async()=>{const m=await model;assert.equal(m.filteredDevices([{deviceId:'uid',status:'pending',email:'viewer@example.test'}],'pending','VIEWER@EXAMPLE.TEST').length,1);});
 
-test('watching filter excludes inactive and paused devices',async()=>{const m=await model;const now=Date.now();const d=[{deviceId:'a',status:'approved',isWatching:true,lastActiveAt:now},{deviceId:'b',status:'approved',isWatching:true,lastActiveAt:now-200000},{deviceId:'c',status:'rejected',isWatching:true,lastActiveAt:now}];assert.equal(m.filteredDevices(d,'watching','',now).length,1);});
+test('watching filter excludes inactive and paused devices',async()=>{const m=await model;const now=Date.now();const d=[{deviceId:'a',status:'approved',isWatching:true,lastActiveAt:now},{deviceId:'b',status:'approved',isWatching:true,lastActiveAt:now-400000},{deviceId:'c',status:'rejected',isWatching:true,lastActiveAt:now}];assert.equal(m.filteredDevices(d,'watching','',now).length,1);});

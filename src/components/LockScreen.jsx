@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminApi } from '../adminApi.js';
-import { ShieldIcon } from './Icons.jsx';
+import { ShieldIcon, MeflixRibbonLogo } from './Icons.jsx';
 
 export const LockScreen = ({ hidden = false, onUnlock }) => {
   const [pin, setPin] = useState('');
@@ -106,26 +106,30 @@ export const LockScreen = ({ hidden = false, onUnlock }) => {
   }, [pin, busy, hidden]);
 
   return (
-    <main id="lock" className="pin-lock" hidden={hidden}>
-      <div className="privacy-panel">
-        <div className="brand-logo-wrap">
-          <div className="brand-mark-box">
-            <ShieldIcon size={22} color="#FFFFFF" />
-          </div>
-          <div className="brand-copy">
-            <div className="brand-top-row">
-              <span className="brand-title">MEFLIX CONSOLE</span>
-              <span className="admin-pill">ADMIN</span>
+    <main id="lock" className="lock-screen" hidden={hidden} aria-labelledby="unlock-heading">
+      <div className="lock-card">
+        <div className="lock-intro">
+          <div className="lock-brand-header">
+            <div className="brand-mark-box">
+              <MeflixRibbonLogo size={36} />
             </div>
-            <span className="brand-sub">Device Authorization & Security</span>
+            <div className="brand-copy">
+              <div className="brand-top-row">
+                <span className="brand-title">MEFLIX</span>
+                <span className="admin-pill">ADMIN</span>
+              </div>
+              <span className="brand-sub">Console Access</span>
+            </div>
           </div>
-        </div>
 
-        <h1>Enter privacy password</h1>
-        <p className="lock-desc">Enter your 4-digit password to unlock the admin console.</p>
+          <h1 id="unlock-heading">Enter Master PIN</h1>
+          <p className="lock-desc">Enter your 4-digit security PIN</p>
+        </div>
 
         <form
           id="login-form"
+          className="lock-form"
+          aria-busy={busy}
           onSubmit={(e) => {
             e.preventDefault();
             const inputEl = document.getElementById('pin');
@@ -145,45 +149,50 @@ export const LockScreen = ({ hidden = false, onUnlock }) => {
             className="sr-only"
             value={pin}
           />
-          <div id="pin-dots" className="pin-dots" aria-label={`${pin.length} of 4 digits entered`}>
-            {[0, 1, 2, 3].map(i => (
-              <span key={i} className={i < pin.length ? 'filled' : ''} />
-            ))}
+
+          <div className="lock-dots-area">
+            <div id="pin-dots" className="pin-dots" role="status" aria-live="polite" aria-label={`${pin.length} of 4 digits entered`}>
+              {[0, 1, 2, 3].map(i => (
+                <span key={i} className={i < pin.length ? 'filled' : ''} aria-hidden="true" />
+              ))}
+            </div>
+
+            <p id="login-error" role="alert" className="pin-error">{error}</p>
           </div>
 
-          <p id="login-error" role="alert" className="pin-error">{error}</p>
-
-          <div id="keypad" className="keypad" aria-label="Numeric keypad">
-            {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => (
+          <div className="lock-keypad-bottom-wrap">
+            <div id="keypad" className="keypad" role="group" aria-label="Numeric keypad">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  data-digit={d}
+                  disabled={busy}
+                  onClick={() => handleDigit(d)}
+                >
+                  {d}
+                </button>
+              ))}
+              <span aria-hidden="true" className="keypad-empty" />
               <button
-                key={d}
                 type="button"
-                data-digit={d}
+                data-digit="0"
                 disabled={busy}
-                onClick={() => handleDigit(d)}
+                onClick={() => handleDigit('0')}
               >
-                {d}
+                0
               </button>
-            ))}
-            <span aria-hidden="true" />
-            <button
-              type="button"
-              data-digit="0"
-              disabled={busy}
-              onClick={() => handleDigit('0')}
-            >
-              0
-            </button>
-            <button
-              id="backspace"
-              type="button"
-              className="backspace"
-              aria-label="Backspace"
-              disabled={busy}
-              onClick={handleBackspace}
-            >
-              ⌫
-            </button>
+              <button
+                id="backspace"
+                type="button"
+                className="backspace"
+                aria-label="Backspace"
+                disabled={busy}
+                onClick={handleBackspace}
+              >
+                ⌫
+              </button>
+            </div>
           </div>
 
           <button id="sign-in" type="submit" className="sr-only" tabIndex={-1} disabled={busy}>

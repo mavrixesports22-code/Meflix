@@ -1,9 +1,12 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+if (require.main === module) require('./lib/local-env.cjs').loadLocalEnvironment(__dirname);
 const { handleAdmin } = require('./lib/admin-backend.cjs');
+const { handleTV } = require('./lib/tv-auth-backend.cjs');
 
 const files = new Map([
+  ['/connect.html', 'connect.html'], ['/connect.js', 'connect.js'], ['/connect.css', 'connect.css'],
   ['/', 'index.html'],
   ['/index.html', 'index.html'],
   ['/admin.css', 'admin.css'],
@@ -13,7 +16,8 @@ const files = new Map([
   ['/google-signin.html', 'google-signin.html'],
   ['/google-signin.js', 'google-signin.js'],
   ['/google-signin.css', 'google-signin.css'],
-  ['/google-callback.html', 'google-callback.html']
+  ['/google-callback.html', 'google-callback.html'],
+  ['/tv.html', 'tv.html'], ['/tv.js', 'tv.js'], ['/tv.css', 'tv.css']
 ]);
 
 const mime = {
@@ -33,6 +37,7 @@ async function handler(req, res) {
   );
 
   if (await handleAdmin(req, res)) return;
+  if (await handleTV(req, res)) return;
 
   if (!['GET', 'HEAD'].includes(req.method)) {
     res.writeHead(405, { Allow: 'GET, HEAD' });

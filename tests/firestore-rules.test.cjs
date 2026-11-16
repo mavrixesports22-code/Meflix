@@ -70,3 +70,23 @@ test('Firestore enforces admin role, device ownership, permanent approval and re
  assert.equal((await request('app_config/security','owner','PATCH',{pinVersion:2})).status,200);
  assert.equal((await request('device_requests',admin.token)).status,403);
 });
+
+test('single-TV claims reject old TV approval reads without revoking the mobile login',{skip:!active},async()=>{
+ const device=await signup();
+ const app=initializeApp({projectId:project},'tv-rules-test');
+ async function tvToken(session,installation){
+  const custom=await getAuth(app).createCustomToken(device.uid,{tvSessionId:session,tvInstallationId:installation});
+  const response=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=demo-key`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:custom,returnSecureToken:true})});
+  const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return data.idToken;
+ }
+ const approval={deviceId:device.uid,ownerUid:device.uid,name:'Viewer',ip:'',platform:'TV account',requestedAt:1,status:'approved'};
+ assert.equal((await request(`device_requests/${device.uid}`,'owner','PATCH',approval)).status,200);
+ const old=await tvToken('first','installation-a'),current=await tvToken('second','installation-b');
+ assert.equal((await request(`tv_sessions/${device.uid}`,'owner','PATCH',{sessionId:'second',installationId:'installation-b',status:'active'})).status,200);
+ assert.equal((await request(`device_requests/${device.uid}`,old)).status,403);
+ assert.equal((await request(`device_requests/${device.uid}`,current)).status,200);
+ assert.equal((await request(`device_requests/${device.uid}`,device.token)).status,200);
+ assert.equal((await request(`tv_sessions/${device.uid}`,old)).status,200);
+ assert.equal((await request(`tv_sessions/${device.uid}`,old,'PATCH',{sessionId:'first',installationId:'installation-a',status:'active'})).status,403);
+ assert.equal((await request('tv_pairings/secret',device.token)).status,403);
+});

@@ -1,43 +1,53 @@
-// Meflix Admin — design tokens (mirrors meflix-native theme)
+// Meflix Admin — luxury tri-tone palette: Navy Blue (#012C54), Bright Red (#C6001B), Pale Pink (#FDF7F6)
 export const theme = {
-  // Surfaces
-  bg:          '#101012',
-  cardBg:      '#1a1a1e',
-  modalBg:     '#19191d',
-  hoverBg:     '#252529',
-  elevatedBg:  '#202026',
-  inputBg:     '#131318',
+  // Surfaces & Backgrounds
+  bg:          '#FDF7F6', // Pale Pink foundation
+  shellBg:     '#FDF7F6',
+  cardBg:      '#FFFFFF',
+  cardBgHover: '#FAF0EF',
+  modalBg:     '#FFFFFF',
+  hoverBg:     '#F5E8E7',
+  elevatedBg:  '#FFFFFF',
+  inputBg:     '#FAF0EF',
 
-  // Brand
-  red:         '#E50914',
-  redHover:    '#c8000e',
-  redDim:      'rgba(229,9,20,0.13)',
+  // Trio Colors
+  navy:        '#012C54', // Navy Blue
+  navyDark:    '#001F3D',
+  navySubtle:  '#E8EEF4',
+  navyBorder:  '#C5D5E4',
 
-  // Semantic
-  green:       '#46d369',
-  greenDim:    'rgba(70,211,105,0.13)',
-  amber:       '#FFA726',
-  amberDim:    'rgba(255,167,38,0.13)',
-  blue:        '#3B82F6',
-  blueDim:     'rgba(59,130,246,0.13)',
+  red:         '#C6001B', // Bright Red
+  redHover:    '#DF001F',
+  redSubtle:   '#FDEDEF',
+  redBorder:   '#F8C8CD',
 
-  // Borders
-  border:      'rgba(255,255,255,0.09)',
-  borderLight: 'rgba(255,255,255,0.14)',
+  pink:        '#FDF7F6', // Pale Pink
+  pinkSurface: '#FAF0EF',
+  pinkBorder:  '#F0DEDD',
 
-  // Text
-  textPrimary:   '#EDEDF0',
-  textSecondary: '#8E8E9E',
-  textMuted:     '#52525E',
+  // Semantic & Status
+  green:       '#059669',
+  greenBg:     '#ECFDF5',
+  greenBorder: '#A7F3D0',
 
-  // Glass
-  glassNav:   'rgba(16,16,18,0.92)',
-  glassModal: 'rgba(25,25,29,0.97)',
+  amber:       '#D97706',
+  amberBg:     '#FFFBEB',
+  amberBorder: '#FDE68A',
+
+  // Structural Hairline Borders
+  borderSubtle: '#F0DEDD',
+  borderMedium: '#E2CECD',
+  borderFocus:  '#C6001B',
+
+  // Typography (Navy Blue hierarchy)
+  textPrimary:   '#012C54',
+  textSecondary: '#4A637F',
+  textMuted:     '#849BB2',
 
   // Layout
-  sidebarW: '224px',
+  mobileMaxWidth: '480px',
 
-  // Typography
-  fontHeading: "'Outfit', -apple-system, sans-serif",
-  fontBody:    "'Inter', -apple-system, sans-serif",
+  // Fonts
+  fontHeading: "'Outfit', -apple-system, BlinkMacSystemFont, sans-serif",
+  fontBody:    "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
 };

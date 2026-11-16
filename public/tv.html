@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Connect your TV · Meflix</title><link rel="stylesheet" href="/tv.css"><script type="module" src="/tv.js"></script></head>
+<body><main>
+  <div class="brand">MEFLIX</div><h1>Connect your TV</h1>
+  <p id="intro">Only continue if you started sign-in on your own TV.</p>
+  <section id="login">
+    <button id="google" type="button" disabled>Continue with Google</button><p class="or">or use your Meflix account</p>
+    <form id="email-form"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required maxlength="254"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><button type="submit" class="primary" disabled>Sign in</button></form>
+  </section>
+  <section id="activation" hidden>
+    <p id="account"></p><form id="code-form"><label for="code">Code shown on your TV</label><input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH" maxlength="9" required><button type="submit" class="primary">Find my TV</button></form>
+    <div id="review" hidden><h2 id="tv-name"></h2><p id="replacement"></p><p id="approval"></p><button id="connect" type="button" class="primary">Connect this TV</button><button id="cancel" type="button">Cancel</button></div>
+    <button id="switch" type="button" class="link">Use another account</button>
+  </section>
+  <p id="message" role="status" hidden></p><p id="error" role="alert" hidden></p>
+</main></body></html>

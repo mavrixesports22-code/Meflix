@@ -32,7 +32,10 @@ async function build() {
   });
 
   fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-  for (const name of ['index.html', 'admin.css', 'admin.js', 'model.js', 'firebase-config.js', 'google-signin.html', 'google-signin.js', 'google-signin.css', 'google-callback.html']) {
+  for (const name of ['connect.html', 'connect.js', 'connect.css']) {
+    fs.copyFileSync(path.join(root, 'public', name), path.join(root, 'dist', name));
+  }
+  for (const name of ['index.html', 'admin.css', 'admin.js', 'model.js', 'firebase-config.js', 'google-signin.html', 'google-signin.js', 'google-signin.css', 'google-callback.html', 'tv.html', 'tv.js', 'tv.css']) {
     fs.copyFileSync(path.join(root, 'public', name), path.join(root, 'dist', name));
   }
   const css=await esbuild.transform(fs.readFileSync(path.join(root,'public','admin.css'),'utf8'),{loader:'css',minify:true});
@@ -47,9 +50,21 @@ async function build() {
     target: ['node20'],
     format: 'cjs',
     outfile: path.join(root, 'api', 'admin', '[action].js'),
+    external: ['@google-cloud/firestore'],
     minify: true,
   });
   console.log('Serverless admin handler bundled successfully in api/admin/[action].js');
+  await esbuild.build({
+    entryPoints: [path.join(root, 'lib', 'tv-handler-entry.cjs')],
+    bundle: true,
+    platform: 'node',
+    target: ['node24'],
+    format: 'cjs',
+    outfile: path.join(root, 'api', 'tv', '[action].js'),
+    external: ['@google-cloud/firestore'],
+    minify: true,
+  });
+  console.log('Serverless TV handler bundled successfully in api/tv/[action].js');
 }
 
 build().catch(err => {

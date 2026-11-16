@@ -8,10 +8,17 @@ service cloud.firestore {
         && request.auth.token.pinVersion == get(/databases/$(database)/documents/app_config/security).data.pinVersion;
     }
     function owner(id) { return signedIn() && request.auth.uid == id; }
+    function activeTV() {
+      return !('tvSessionId' in request.auth.token)
+        || (exists(/databases/$(database)/documents/tv_sessions/$(request.auth.uid))
+          && get(/databases/$(database)/documents/tv_sessions/$(request.auth.uid)).data.status == 'active'
+          && get(/databases/$(database)/documents/tv_sessions/$(request.auth.uid)).data.sessionId == request.auth.token.tvSessionId
+          && get(/databases/$(database)/documents/tv_sessions/$(request.auth.uid)).data.installationId == request.auth.token.tvInstallationId);
+    }
     match /admin_settings/{id} { allow read, write: if false; }
     match /admins/{uid} { allow read, write: if false; }
     match /device_requests/{id} {
-      allow get: if admin() || owner(id);
+      allow get: if admin() || (owner(id) && activeTV());
       allow list: if admin();
       allow create: if owner(id)
         && request.resource.data.keys().hasOnly(['deviceId','ownerUid','legacyDeviceId','name','email','signInMethod','ip','platform','requestedAt','status'])
@@ -27,10 +34,14 @@ service cloud.firestore {
         && request.resource.data.ip == '' && request.resource.data.requestedAt is number;
       allow update: if (admin() && request.resource.data.deviceId == resource.data.deviceId
         && request.resource.data.get('ownerUid', '') == resource.data.get('ownerUid', ''))
-        || (owner(id) && resource.data.ownerUid == id
+        || (owner(id) && activeTV() && resource.data.ownerUid == id
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastActiveAt','isWatching','currentTitle','currentEpisode','currentProgress','watchHistory'])
           && request.resource.data.get('watchHistory', []).size() <= 20);
       allow delete: if admin();
+    }
+    match /tv_sessions/{id} {
+      allow get: if owner(id);
+      allow list, create, update, delete: if false;
     }
     // Only encrypted, five-minute Google login results are shared with Expo Go.
     match /google_signin_sessions/{id} {

@@ -1,71 +1,78 @@
-import React from 'react';
+import React from "react";
+import { statusOf } from "../../public/model.js";
+import { GridIcon, PlayIcon, AlertCircleIcon, CheckIcon } from "./Icons.jsx";
 
 export const StatsRow = ({ devices, currentTab, onSelectTab, isStreaming }) => {
   const streamingCount = devices.filter(isStreaming).length;
-  const pendingCount = devices.filter(d => d.status === 'pending').length;
-  const approvedCount = devices.filter(d => d.status === 'approved').length;
+  const pendingCount = devices.filter((d) => d.status === "pending").length;
+  const approvedCount = devices.filter(
+    (d) => statusOf(d) === "approved",
+  ).length;
 
   const kpis = [
     {
-      id: 'all',
-      countId: 'count-all',
-      label: 'TOTAL DEVICES',
+      id: "all",
+      countId: "count-all",
+      label: "Total Fleet",
       num: devices.length,
-      sub: 'Tracked in system',
-      color: '#FFFFFF',
-      hasDot: false
+      icon: <GridIcon size={16} color="#012C54" />,
+      circleCls: "circle-navy",
     },
     {
-      id: 'watching',
-      countId: 'count-watching',
-      label: 'STREAMING NOW',
+      id: "watching",
+      countId: "count-watching",
+      label: "Watching Now",
       num: streamingCount,
-      sub: streamingCount > 0 ? 'Active viewers' : 'Idle',
-      color: streamingCount > 0 ? '#46D369' : '#FFFFFF',
-      hasDot: streamingCount > 0
+      icon: <PlayIcon size={14} color="#C6001B" />,
+      circleCls: "circle-red",
+      hasDot: streamingCount > 0,
     },
     {
-      id: 'pending',
-      countId: 'count-pending',
-      label: 'PENDING APPROVAL',
+      id: "pending",
+      countId: "count-pending",
+      label: "Pending Review",
       num: pendingCount,
-      sub: pendingCount > 0 ? 'Needs action' : 'Queue clear',
-      color: pendingCount > 0 ? '#FFA726' : '#FFFFFF',
-      hasDot: false
+      icon: <AlertCircleIcon size={16} color="#C6001B" />,
+      circleCls: "circle-red",
     },
     {
-      id: 'approved',
-      countId: 'count-approved',
-      label: 'APPROVED DEVICES',
+      id: "approved",
+      countId: "count-approved",
+      label: "Active Passes",
       num: approvedCount,
-      sub: 'Device-bound access',
-      color: '#FFFFFF',
-      hasDot: false
-    }
+      icon: <CheckIcon size={14} color="#012C54" />,
+      circleCls: "circle-navy",
+    },
   ];
 
   return (
-    <div id="stats" className="stats-grid">
-      {kpis.map(k => (
+    <div id="stats" className="concept-stats-grid">
+      {kpis.map((k) => (
         <div
           key={k.id}
-          className={`stat-card stat-card-${k.id} ${currentTab === k.id ? 'active' : ''}`}
+          className={`concept-kpi-card ${currentTab === k.id ? "active" : ""}`}
           role="button"
           tabIndex={0}
           onClick={() => onSelectTab(k.id)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectTab(k.id); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelectTab(k.id);
+            }
+          }}
         >
-          <div className="stat-label-row">
-            <span className="stat-label">{k.label}</span>
-            {k.hasDot && <span className="green-dot" />}
+          <div className="concept-kpi-top">
+            <div className={`concept-icon-circle ${k.circleCls}`}>
+              {k.icon}
+            </div>
+            <span className="concept-kpi-label">{k.label}</span>
+            {k.hasDot && <span className="concept-live-dot" />}
           </div>
-          <div id={k.countId} className="stat-number" style={{ color: k.color }}>
+          <div id={k.countId} className="concept-kpi-number">
             {k.num}
           </div>
-          <div className="stat-sub">{k.sub}</div>
         </div>
       ))}
     </div>
   );
 };
-

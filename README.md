@@ -4,13 +4,13 @@ A separate administration console for Meflix. This repository now serves the adm
 
 ## Simple PIN access
 
-The entry screen follows the supplied reference: black background, four dots, a circular numeric keypad and backspace. Enter four digits to unlock automatically. There is **no email sign-in, failed-attempt cooldown, attempt lockout or idle auto-lock**. Sessions persist until you choose Lock or the PIN changes. PINs are verified on the server against a salted scrypt hash stored in Firestore, not compared with a public browser value.
+The entry screen follows the supplied reference: black background, four dots, a responsive numeric keypad and backspace. The keypad sits near the bottom on phones and switches to a compact side-by-side layout in landscape. Enter four digits to unlock automatically. There is **no email sign-in, failed-attempt cooldown, attempt lockout or idle auto-lock**. Sessions persist until you choose Lock or the PIN changes. PINs are verified on the server against the private security record in Firestore, not compared with a public browser value.
 
 The dashboard includes device search, watching/pending/approved/paused/expired filters, permanent approval by default, optional scheduled access, private notes, viewing activity, CSV export, app release settings and PIN changes.
 
 ## Run locally
 
-Use Node 24.x. Run `npm ci`, set the server environment variables below, then `npm start`. The default local URL is http://localhost:5173. `npm run build` prepares the static assets in `dist`; the Node API must also run for PIN verification.
+Use Node 24.x. Run `npm ci`, copy `.env.example` to `.env.local` and fill in the private server values below, then run `npm start`. Local startup automatically reads `.env.local`, followed by `.env`; values already set in your shell take priority. Restart after changing these files. The default local URL is http://localhost:5173. `npm run build` prepares the static assets in `dist`; the Node API must also run for PIN verification.
 
 ## Firebase / Vercel setup
 
@@ -48,6 +48,6 @@ For production rollout, confirm the hosting credentials, deploy the ownership ru
 firebase emulators:exec --only "auth,firestore" --project demo-meflix-admin "npm test"
 ```
 
-The `demo-` project and local emulators isolate these tests from production data. Tests cover incorrect-PIN immediate retry, PIN changes, session invalidation, device ownership, self-approval denial, legacy/IP denial, app-update metadata, UI actions and CSV formula escaping. Browser control was unavailable for a complete visual pass in this environment; DOM interaction tests do not establish pixel-perfect rendering.
+The `demo-` project and local emulators isolate these tests from production data. Tests cover incorrect-PIN immediate retry, PIN changes, session invalidation, device ownership, self-approval denial, legacy/IP denial, app-update metadata, UI actions, local environment loading, credential failures and CSV formula escaping. Headless Chrome checks cover eight portrait, landscape, tablet and desktop viewport sizes, plus keypad entry, backspace and keyboard input.
 
 There are no secrets in the public Firebase client configuration. `FIREBASE_SERVICE_ACCOUNT_JSON` and the initial PIN must remain server-only.

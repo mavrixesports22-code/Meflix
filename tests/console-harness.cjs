@@ -19,7 +19,7 @@ async function setup(options={}){
  updateDoc:async(ref,patch)=>{writes.push({ref,patch});const d=devices.find(d=>d.deviceId===ref.id);if(d)Object.assign(d,patch);},setDoc:async(ref,patch)=>writes.push({ref,patch}),deleteDoc:async ref=>writes.push({deleted:ref}),};
  const timer=(fn,ms,...args)=>{const handle=setTimeout(fn,ms,...args);if(ms>500)handle.unref();return handle;};
  const context={__sdk:sdk,document,window:dom.window,Node:dom.window.Node,console,Date,AbortController,Blob,URL,queueMicrotask,requestAnimationFrame:fn=>timer(fn,0),cancelAnimationFrame:clearTimeout,setTimeout:timer,clearTimeout,setInterval:(fn,ms)=>{const t=setInterval(fn,ms);t.unref();return t;},clearInterval,
- fetch:async(url,request={})=>{api.push({url,options:request});if(options.loginFails&&url.endsWith('/login'))return{ok:false,json:async()=>({error:'Server login unavailable.'})};return{ok:true,json:async()=>url.endsWith('/login')?{token:'custom-token'}:url.endsWith('/pin')?{changed:true}:{authorized:true}};}};
+ fetch:async(url,request={})=>{api.push({url,options:request});if(options.loginFails&&url.endsWith('/login'))return{ok:false,json:async()=>({error:'Server login unavailable.'})};if(url.endsWith('/unpair-tv')){if(options.unpairFails)return{ok:false,json:async()=>({error:'Connected TV changed. Refresh and retry.'})};options.tvSessions=[];}return{ok:true,json:async()=>url.endsWith('/login')?{token:'custom-token'}:url.endsWith('/pin')?{changed:true}:url.endsWith('/tv-sessions')?{sessions:options.tvSessions||[]}:{authorized:true}};}};
  await vm.runInNewContext('(async()=>{'+await bundle()+'})()',context);
  const flush=async()=>{await new Promise(resolve=>setTimeout(resolve,100));};await flush();
  const click=id=>document.getElementById(id).click();
